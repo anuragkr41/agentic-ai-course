@@ -129,7 +129,7 @@
     if (isOptional) {
       scoreHtml += '<div>Self-check complete. Review explanations above for anything you missed.</div>';
     } else if (result.passed) {
-      scoreHtml += '<div>✓ Passed (≥' + passThreshold + '%). This module now counts toward your Pictu-e-Learning completion certificate.</div>';
+      scoreHtml += '<div>✓ Passed (≥' + passThreshold + '%). This module now counts toward your StratifyX completion certificate.</div>';
     } else {
       scoreHtml += '<div>You need ' + passThreshold + '% for this module to count toward the certificate. Best score saved: ' + result.bestScore + '%. Review the explanations above and retake.</div>';
     }
