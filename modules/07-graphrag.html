@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module 7 — GraphRAG · Agentic AI Course</title>
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/module.css">
+  <link rel="stylesheet" href="../assets/css/print.css">
+</head>
+<body data-module-id="module-07">
+
+  <header class="site-header" id="site-header"></header>
+
+  <section class="module-hero">
+    <div class="module-hero__inner">
+      <div class="num">Module 7</div>
+      <h1>GraphRAG — Hybrid Retrieval + Reasoning</h1>
+      <p class="subtitle">Combine vectors, full-text, and graph traversal. Show evidence + show the path. Explainable retrieval for complex questions.</p>
+      <div class="meta"><span>⏱ ~70 min · 3 videos + 1 walkthrough · 10 MCQs + 3 scenarios · ≥80% to unlock M8</span></div>
+    </div>
+  </section>
+
+  <main class="container">
+
+    <h2 id="why">Why this matters</h2>
+    <p>
+      Module 5 made retrieval "agentic." Module 6 made data structured. <strong>GraphRAG combines them.</strong> Vector for similarity, graph for relationships, full-text for exact match — all three lanes feeding one answer with both <em>evidence</em> (the chunks) and <em>the path</em> (how the entities connect). This is the pattern enterprise customers ask about by name in 2026.
+    </p>
+
+    <div class="objectives">
+      <h4>You'll be able to</h4>
+      <ul>
+        <li>Explain GraphRAG vs. vector RAG with a concrete multi-hop example</li>
+        <li>Spec hybrid retrieval (vector + full-text + graph) and decide weights per query type</li>
+        <li>Design "evidence + path" response schemas that customers and auditors love</li>
+        <li>Recognize when GraphRAG is overkill (and stick with vector RAG)</li>
+      </ul>
+    </div>
+
+    <div class="toc">
+      <h4>Table of contents</h4>
+      <ol>
+        <li><a href="#multihop">Graph traversal &amp; multi-hop reasoning</a></li>
+        <li><a href="#hybrid">Hybrid retrieval (three lanes)</a></li>
+        <li><a href="#evidence-path">Evidence + path response pattern</a></li>
+        <li><a href="#when">When to use GraphRAG (and when not)</a></li>
+        <li><a href="#books">Books &amp; deeper reading</a></li>
+        <li><a href="#resume">Founder skills + resume panel</a></li>
+        <li><a href="#test">Module test</a></li>
+      </ol>
+    </div>
+
+    <h2 id="multihop" class="section-anchor">1. Graph traversal &amp; multi-hop reasoning</h2>
+    <p>
+      Vector RAG can answer "what's our refund policy?" by finding a chunk that says so. It cannot answer "which of my Tier-A customers bought from supplier X in Q1 AND had a recall AND are still active?" — because those facts are scattered across entities, and the LLM has to reason about <em>connections</em>, not just text.
+    </p>
+    <p>Graph traversal walks the relationships. Two hops, three hops, N hops — until you reach the answer. The agent picks the path.</p>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 700 230" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Multi-hop traversal">
+        <circle cx="80" cy="115" r="32" fill="#EDF0FF" stroke="#3D5AFE" stroke-width="2"/><text x="80" y="113" text-anchor="middle" font-size="11" font-weight="700">Customer</text><text x="80" y="127" text-anchor="middle" font-size="9">Anurag</text>
+        <circle cx="230" cy="115" r="32" fill="#EDF0FF" stroke="#3D5AFE"/><text x="230" y="113" text-anchor="middle" font-size="11" font-weight="700">Order</text><text x="230" y="127" text-anchor="middle" font-size="9">#9981</text>
+        <circle cx="380" cy="115" r="32" fill="#EDF0FF" stroke="#3D5AFE"/><text x="380" y="113" text-anchor="middle" font-size="11" font-weight="700">Product</text><text x="380" y="127" text-anchor="middle" font-size="9">Widget A</text>
+        <circle cx="530" cy="115" r="32" fill="#FFF1E0" stroke="#B85C00"/><text x="530" y="113" text-anchor="middle" font-size="11" font-weight="700">Batch</text><text x="530" y="127" text-anchor="middle" font-size="9">recalled</text>
+        <circle cx="650" cy="60" r="32" fill="#FAE7E9" stroke="#B23A48"/><text x="650" y="58" text-anchor="middle" font-size="10" font-weight="700">Supplier</text><text x="650" y="72" text-anchor="middle" font-size="9">SupplyCo</text>
+        <line x1="112" y1="115" x2="198" y2="115" stroke="#3D5AFE"/><text x="155" y="108" text-anchor="middle" font-size="9" fill="#3D5AFE">PLACED</text>
+        <line x1="262" y1="115" x2="348" y2="115" stroke="#3D5AFE"/><text x="305" y="108" text-anchor="middle" font-size="9" fill="#3D5AFE">CONTAINS</text>
+        <line x1="412" y1="115" x2="498" y2="115" stroke="#3D5AFE"/><text x="455" y="108" text-anchor="middle" font-size="9" fill="#3D5AFE">IN_BATCH</text>
+        <line x1="552" y1="92" x2="625" y2="65" stroke="#3D5AFE"/><text x="600" y="80" text-anchor="middle" font-size="9" fill="#3D5AFE">FROM</text>
+        <text x="350" y="190" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#1A1A1A" font-style="italic">4 hops: Customer → Order → Product → Batch → Supplier. Vector RAG can't traverse this.</text>
+        <text x="350" y="210" text-anchor="middle" font-family="SF Mono, monospace" font-size="10" fill="#4A4A4A">"Which customers were affected by the SupplyCo recall?"</text>
+      </svg>
+      <figcaption>Multi-hop traversal. Each hop is a relationship the graph encodes explicitly.</figcaption>
+    </figure>
+
+    <h2 id="hybrid" class="section-anchor">2. Hybrid retrieval — three lanes, one answer</h2>
+    <p>The state of the art: run all three retrieval modes in parallel, then merge.</p>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 700 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Hybrid retrieval lanes">
+        <defs><marker id="m7-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#3D5AFE"/></marker></defs>
+        <rect x="280" y="20" width="140" height="40" rx="6" fill="#F3F0E8" stroke="#7A7A7A"/><text x="350" y="46" text-anchor="middle" font-size="11" font-weight="700">User query</text>
+        <line x1="350" y1="60" x2="160" y2="90" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#m7-arr)"/>
+        <line x1="350" y1="60" x2="350" y2="90" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#m7-arr)"/>
+        <line x1="350" y1="60" x2="540" y2="90" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#m7-arr)"/>
+        <rect x="80" y="100" width="160" height="60" rx="6" fill="#EDF0FF" stroke="#3D5AFE"/><text x="160" y="120" text-anchor="middle" font-size="11" font-weight="700">VECTOR</text><text x="160" y="138" text-anchor="middle" font-size="10">semantic similarity</text><text x="160" y="152" text-anchor="middle" font-size="9" fill="#7A7A7A">"meaning ≈"</text>
+        <rect x="270" y="100" width="160" height="60" rx="6" fill="#EDF0FF" stroke="#3D5AFE"/><text x="350" y="120" text-anchor="middle" font-size="11" font-weight="700">FULL-TEXT</text><text x="350" y="138" text-anchor="middle" font-size="10">BM25 / keyword</text><text x="350" y="152" text-anchor="middle" font-size="9" fill="#7A7A7A">"exact words"</text>
+        <rect x="460" y="100" width="160" height="60" rx="6" fill="#EDF0FF" stroke="#3D5AFE"/><text x="540" y="120" text-anchor="middle" font-size="11" font-weight="700">GRAPH</text><text x="540" y="138" text-anchor="middle" font-size="10">traversal / Cypher</text><text x="540" y="152" text-anchor="middle" font-size="9" fill="#7A7A7A">"relationships"</text>
+        <line x1="160" y1="160" x2="320" y2="190" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#m7-arr)"/>
+        <line x1="350" y1="160" x2="350" y2="190" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#m7-arr)"/>
+        <line x1="540" y1="160" x2="380" y2="190" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#m7-arr)"/>
+        <rect x="240" y="195" width="220" height="40" rx="6" fill="#E6F4E6" stroke="#2E7D32"/><text x="350" y="220" text-anchor="middle" font-size="11" font-weight="700">RERANK + MERGE → answer</text>
+      </svg>
+      <figcaption>The three lanes. Vector for fuzzy meaning, full-text for exact match, graph for relationships. Rerank merges by relevance.</figcaption>
+    </figure>
+
+    <p>How to weight the lanes:</p>
+    <ul>
+      <li><strong>"What is …" questions</strong> → vector dominant. Look up definitions.</li>
+      <li><strong>"Find docs containing exact term X"</strong> → full-text dominant. Product codes, names, IDs.</li>
+      <li><strong>"Which entities relate to Y and Z by path?"</strong> → graph dominant. Compliance, fraud, recall scope.</li>
+      <li><strong>Most real queries</strong> → all three, with the agent learning which signals matter from logs.</li>
+    </ul>
+
+    <figure class="video-embed">
+      <div class="video-embed__frame">
+        <iframe src="https://www.youtube.com/embed/-tgQa8Fzf80"
+                title="HybridRAG: A Fusion of Graph and Vector Retrieval — Mitesh Patel, NVIDIA"
+                loading="lazy" allowfullscreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+      </div>
+      <figcaption>
+        <span class="video-embed__meta">Watch · NVIDIA · NASDAQ: NVDA</span>
+        <strong>HybridRAG: A Fusion of Graph and Vector Retrieval</strong>
+        NVIDIA's engineering talk on combining graph and vector retrieval — including the empirical wins. The cleanest "why both, not either" pitch in this list.
+        <br><a class="video-embed__yt-link" href="https://www.youtube.com/watch?v=-tgQa8Fzf80" target="_blank" rel="noopener">Open on YouTube ↗</a>
+      </figcaption>
+    </figure>
+
+    <h2 id="evidence-path" class="section-anchor">3. Evidence + path response pattern</h2>
+    <p>The output schema that customers love and auditors accept:</p>
+    <pre><code>class GraphRAGAnswer(BaseModel):
+    text: str
+    evidence: list[Citation]      # the chunks (from vector/full-text lanes)
+    path: list[Edge]              # the graph traversal that connected entities
+    confidence: float</code></pre>
+    <p>The <strong>path</strong> field is the killer feature. Your answer shows "we connected Customer Anurag to Supplier SupplyCo via this 4-hop path: Anurag → Order #9981 → Widget A → Batch #B-12 → SupplyCo." A user can visually verify; a regulator can audit; a debugger can spot extraction errors.</p>
+
+    <figure class="video-embed">
+      <div class="video-embed__frame">
+        <iframe src="https://www.youtube.com/embed/XNneh6-eyPg"
+                title="Practical GraphRAG: Making LLMs smarter with Knowledge Graphs — Neo4j"
+                loading="lazy" allowfullscreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+      </div>
+      <figcaption>
+        <span class="video-embed__meta">Watch · Neo4j</span>
+        <strong>Practical GraphRAG: Making LLMs smarter with Knowledge Graphs</strong>
+        Three Neo4j engineers on the practical mechanics of GraphRAG — schema design, query patterns, hybrid scoring. Watch the section on "graph filters before vector search" for a major latency win.
+        <br><a class="video-embed__yt-link" href="https://www.youtube.com/watch?v=XNneh6-eyPg" target="_blank" rel="noopener">Open on YouTube ↗</a>
+      </figcaption>
+    </figure>
+
+    <h2 id="when" class="section-anchor">4. When to use GraphRAG (and when not)</h2>
+    <table class="compare-table">
+      <thead><tr><th>Use GraphRAG when</th><th>Stick with vector RAG when</th></tr></thead>
+      <tbody>
+        <tr><td>Data has explicit relationships (org charts, supply chains, financial ledgers)</td><td>Data is flat documents with no structural cross-refs</td></tr>
+        <tr><td>Queries are multi-hop or constrained ("X who Y and Z")</td><td>Queries are "find similar text"</td></tr>
+        <tr><td>You need to <em>show the path</em> for compliance / debug</td><td>Showing citations is enough</td></tr>
+        <tr><td>Same entity appears across many documents</td><td>Documents are independent</td></tr>
+        <tr><td>You'll invest in ontology + extraction</td><td>You won't (be honest with yourself)</td></tr>
+      </tbody>
+    </table>
+
+    <figure class="video-embed">
+      <div class="video-embed__frame">
+        <iframe src="https://www.youtube.com/embed/AvVoJBxgSQk"
+                title="Agentic GraphRAG: AI's Logical Edge — Stephen Chin, Neo4j"
+                loading="lazy" allowfullscreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+      </div>
+      <figcaption>
+        <span class="video-embed__meta">Watch · Neo4j</span>
+        <strong>Agentic GraphRAG: AI's Logical Edge — Stephen Chin (Neo4j)</strong>
+        How agentic systems use GraphRAG for reasoning, not just retrieval. The bridge between Module 5 (Agentic RAG) and this module — and a preview of where compliance-grade AI is heading.
+        <br><a class="video-embed__yt-link" href="https://www.youtube.com/watch?v=AvVoJBxgSQk" target="_blank" rel="noopener">Open on YouTube ↗</a>
+      </figcaption>
+    </figure>
+
+    <div class="walkthrough" data-walkthrough-id="m7-graphrag">
+      <div class="walkthrough__header"><h4 class="walkthrough__title">▷ Step through: a GraphRAG query end-to-end</h4><span class="walkthrough__subtitle">6 steps · compliance scenario</span></div>
+      <div class="walkthrough__viewport">
+        <svg viewBox="0 0 700 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="GraphRAG walkthrough">
+          <g data-wf="1,2,3,4,5,6"><rect x="20" y="30" width="660" height="34" rx="6" fill="#F3F0E8" stroke="#7A7A7A"/><text x="32" y="50" font-size="11" fill="#1A1A1A">"Which Tier-A customers were affected by the SupplyCo Q1 recall?"</text></g>
+          <g data-wf="2,3,4,5,6"><rect x="20" y="80" width="200" height="42" rx="6" fill="#EDF0FF" stroke="#3D5AFE"/><text x="120" y="98" text-anchor="middle" font-size="10" font-weight="700">EXTRACT ENTITIES</text><text x="120" y="113" text-anchor="middle" font-size="9">SupplyCo, "Q1 recall", Tier-A</text></g>
+          <g data-wf="3,4,5,6"><rect x="240" y="80" width="200" height="42" rx="6" fill="#EDF0FF" stroke="#3D5AFE"/><text x="340" y="98" text-anchor="middle" font-size="10" font-weight="700">GRAPH TRAVERSE</text><text x="340" y="113" text-anchor="middle" font-size="9">Supplier→Batch→Product→Order→Customer</text></g>
+          <g data-wf="4,5,6"><rect x="460" y="80" width="220" height="42" rx="6" fill="#EDF0FF" stroke="#3D5AFE"/><text x="570" y="98" text-anchor="middle" font-size="10" font-weight="700">FILTER + VECTOR LOOKUP</text><text x="570" y="113" text-anchor="middle" font-size="9">tier=A, retrieve recall details</text></g>
+          <g data-wf="5,6"><rect x="20" y="140" width="660" height="42" rx="6" fill="#EDF0FF" stroke="#3D5AFE" stroke-width="2"/><text x="350" y="158" text-anchor="middle" font-size="10" font-weight="700">DRAFT ANSWER WITH EVIDENCE + PATH</text><text x="350" y="173" text-anchor="middle" font-size="9">"7 Tier-A customers affected: ... [chunks + 5-hop path per customer]"</text></g>
+          <g data-wf="6"><rect x="20" y="200" width="660" height="60" rx="6" fill="#E6F4E6" stroke="#2E7D32"/><text x="32" y="220" font-size="10" font-weight="700" fill="#2E7D32">FINAL OUTPUT (schema)</text><text x="32" y="238" font-family="SF Mono, monospace" font-size="10" fill="#1A1A1A">{ text: "...", evidence: [chunks], path: [Supplier→Batch→Product→Order→Customer]× 7,</text><text x="32" y="252" font-family="SF Mono, monospace" font-size="10" fill="#1A1A1A">  confidence: 0.94 }  — every claim auditable, every connection visible</text></g>
+        </svg>
+      </div>
+      <div class="walkthrough__caption"><h4 class="walkthrough__step-title"></h4><p class="walkthrough__step-body"></p></div>
+      <div class="walkthrough__controls"><button class="walkthrough__nav-btn" data-action="prev">←</button><span class="walkthrough__step-indicator"></span><button class="walkthrough__nav-btn" data-action="next">→</button><button class="walkthrough__play-btn" data-action="play">▶ Play</button></div>
+    </div>
+
+    <section class="books-section section-anchor" id="books">
+      <h2>📚 Books &amp; Deeper Reading</h2>
+      <div class="books-grid">
+        <div class="book-card"><h4>Microsoft GraphRAG paper &amp; repo</h4><div class="author">Microsoft Research · 2024</div><div class="why">The canonical "GraphRAG" paper. Read the abstract + Figure 1. Plus the open-source implementation.</div><div class="meta meta--free">Free · <a href="https://github.com/microsoft/graphrag" target="_blank" rel="noopener">github.com/microsoft/graphrag ↗</a></div></div>
+        <div class="book-card"><h4>HybridRAG paper</h4><div class="author">Sarmah et al. · 2024</div><div class="why">Empirical paper on combining vector and graph. Section 4 (results) is what convinces engineering teams to invest.</div><div class="meta meta--free">Free · <a href="https://arxiv.org/abs/2408.04948" target="_blank" rel="noopener">arxiv.org/abs/2408.04948 ↗</a></div></div>
+        <div class="book-card"><h4>Neo4j GraphRAG documentation</h4><div class="author">Neo4j</div><div class="why">Implementation reference. The "Retrievers" section maps cleanly to the three lanes covered here.</div><div class="meta meta--free">Free · <a href="https://neo4j.com/docs/neo4j-graphrag-python/" target="_blank" rel="noopener">neo4j.com docs ↗</a></div></div>
+        <div class="book-card"><h4>LlamaIndex Property Graph guide</h4><div class="author">LlamaIndex</div><div class="why">An alternative implementation path — LlamaIndex's take on GraphRAG. Worth comparing if you're already on the LlamaIndex stack.</div><div class="meta meta--free">Free · <a href="https://docs.llamaindex.ai/" target="_blank" rel="noopener">docs.llamaindex.ai ↗</a></div></div>
+      </div>
+    </section>
+
+    <section id="resume" class="resume-panel section-anchor">
+      <h2>🚀 What You Can Now Build (and Claim)</h2>
+      <h3>What you can now design end-to-end</h3>
+      <ul style="margin: 0 0 1.25rem 0.4rem; padding-left: 1.1rem;">
+        <li>Decide GraphRAG vs. vector RAG with the 5-row honesty check above.</li>
+        <li>Spec hybrid retrieval pipelines combining vector + full-text + graph traversal.</li>
+        <li>Design "evidence + path" response schemas that customers visibly trust and auditors accept.</li>
+        <li>Brief your engineers: "Extract these entity types into Neo4j; retrieve via these three lanes; output must include the traversal path."</li>
+      </ul>
+      <h3>Resume bullets you can defend</h3>
+      <div class="resume-bullet" data-copy-text="Designed GraphRAG systems combining vector, full-text, and graph traversal retrieval lanes — answering multi-hop enterprise queries (compliance, recall scope, fraud paths) that single-lane RAG could not handle.">Designed GraphRAG systems combining vector, full-text, and graph traversal retrieval lanes — answering multi-hop enterprise queries (compliance, recall scope, fraud paths) that single-lane RAG could not handle.<button class="copy-btn">Copy</button></div>
+      <div class="resume-bullet" data-copy-text="Implemented evidence + path response pattern — every answer cites supporting chunks AND shows the entity traversal path, providing both source citations and structural reasoning trace for audit and customer trust.">Implemented evidence + path response pattern — every answer cites supporting chunks AND shows the entity traversal path, providing both source citations and structural reasoning trace for audit and customer trust.<button class="copy-btn">Copy</button></div>
+      <h3>Likely interview / investor / hiring questions</h3>
+      <div class="qa"><div class="q">Q: Pitch GraphRAG to a customer who already has vector RAG working.</div><div class="a">A: "Vector RAG is great for 'what does our doc say about X' questions. GraphRAG is for 'which of our customers are exposed to the SupplyCo recall' — questions that need you to traverse relationships. We layer graph on top, not replace. Vector still answers most queries; graph answers the ones that lose deals when you can't answer them. And every answer comes with a traversal path users can verify — that's what regulators want to see."</div></div>
+      <div class="qa"><div class="q">Q: When wouldn't you bother with GraphRAG?</div><div class="a">A: When my data is flat documents with no entity overlap (e.g., a research paper corpus where each paper is independent). When my queries are all "what does this document say." When I won't invest in ontology + extraction maintenance. The honest test: can I name three queries today that vector RAG fails on? If no, don't build GraphRAG yet.</div></div>
+    </section>
+
+    <section id="test" class="section-anchor"><div id="test-container"></div></section>
+    <nav class="module-nav" id="module-nav"></nav>
+  </main>
+
+  <footer class="site-footer"><div>Full Stack Agentic AI Engineering · Module 7 · <a href="../index.html">Course home</a></div></footer>
+
+  <script src="../assets/js/progress.js"></script>
+  <script src="../assets/js/test-engine.js"></script>
+  <script src="../assets/js/nav.js"></script>
+  <script src="../assets/js/ui.js"></script>
+  <script src="../assets/js/walkthroughs.js"></script>
+  <script src="../assets/data/syllabus.js"></script>
+  <script>
+    renderSiteHeader('#site-header', '../');
+
+    window.WALKTHROUGHS['m7-graphrag'] = {
+      frames: [
+        { title: '1. Multi-hop compliance question', body: 'Query: "Which Tier-A customers were affected by the SupplyCo Q1 recall?" This is impossible for vector RAG — the answer requires connecting Customer ↔ Order ↔ Product ↔ Batch ↔ Supplier across 5 entity types.' },
+        { title: '2. Extract entities from the query', body: 'The agent identifies: "SupplyCo" (Supplier), "Q1 recall" (Batch.recalled in Q1 timeframe), "Tier-A" (Customer.tier=A). These are the anchor points for the graph traversal.' },
+        { title: '3. Graph traversal', body: 'Cypher walks the graph: start at Supplier=SupplyCo, find Batches it shipped, find Products in those batches, find Orders containing those products, find Customers who placed those orders. Edges traversed, not text searched.' },
+        { title: '4. Filter + vector lookup for details', body: 'Apply Customer.tier=A filter on results. For each affected customer, vector-retrieve relevant recall communication chunks (so we can quote the recall notice in the answer). Structural narrowing first, fuzzy retrieval second.' },
+        { title: '5. Draft answer with evidence + path', body: 'The LLM produces an answer that includes both the chunks (evidence) AND the graph path (which customer is connected to SupplyCo by which Order → Product → Batch). Schema-enforced — both fields required.' },
+        { title: '6. Final output schema', body: 'Output: { text, evidence:[chunks], path:[traversal per customer], confidence }. Customer can verify each affected account by reading the 5-hop path. Auditor can verify the recall scope was correctly computed. Engineering can debug if any path looks wrong.' }
+      ]
+    };
+
+    const TEST = {
+      moduleId: 'module-07',
+      mcqs: [
+        { q: 'What does GraphRAG add over vector RAG?', options: ['Faster retrieval', 'Multi-hop traversal across entity relationships', 'Smaller models', 'Free embeddings'], correct: 1, explain: 'GraphRAG enables walking relationships across entities — the kind of structural reasoning vector retrieval can\'t do.' },
+        { q: 'Hybrid retrieval in GraphRAG combines which three lanes?', options: ['Embeddings, prompts, tools', 'Vector similarity, full-text (BM25), graph traversal', 'CPU, GPU, TPU', 'Train, validate, test'], correct: 1, explain: 'Three lanes: vector for semantic similarity, BM25 for exact-match keywords, graph traversal for relationships. Merge and rerank.' },
+        { q: 'When does vector RAG fall short and graph traversal shine?', options: ['When queries are about exact text', 'When queries require connecting multiple entities (e.g., "who bought X and filed Y")', 'When the corpus is small', 'When the LLM is open-source'], correct: 1, explain: 'Multi-hop / relationship-driven queries are graph territory. Vectors only find similar text, not connections.' },
+        { q: 'The "evidence + path" response pattern is valuable because:', options: ['It runs faster', 'Both chunks (textual evidence) AND the traversal path are shown for full auditability', 'Reduces token cost', 'Removes the need for prompts'], correct: 1, explain: 'Evidence shows what was retrieved; path shows how entities are connected. Together: full explainability for users, regulators, and debuggers.' },
+        { q: 'Which is a STRONG signal you should reach for GraphRAG?', options: ['Your corpus is a few hundred unrelated PDFs', 'Same entities appear in many documents and queries cross those entities', 'Your latency budget is 100ms', 'Your LLM is small'], correct: 1, explain: 'GraphRAG\'s value scales with entity overlap and cross-entity queries. Independent docs with simple text questions don\'t need it.' },
+        { q: 'Why might you filter the graph BEFORE vector search (and not the other way)?', options: ['Vector search is slower', 'Graph filtering narrows the candidate set dramatically — vector then runs on a fraction of the corpus, faster and more relevant', 'Saves token cost', 'Required by Neo4j'], correct: 1, explain: 'Filter-first: e.g., "customers in tier A" narrows from 50k to 2k. Vector search on 2k is faster and more on-topic than on 50k.' },
+        { q: 'Which is a typical GraphRAG output schema field?', options: ['compiled_binary', 'evidence (chunks) + path (entities traversed) + confidence', 'GPU memory used', 'training loss'], correct: 1, explain: 'Standard output: text + evidence + path + confidence. The path field is what distinguishes GraphRAG outputs from vector RAG.' },
+        { q: 'When should you NOT bother with GraphRAG?', options: ['Always — it\'s too complex', 'When your data is flat documents with no entity overlap and queries are simple "find similar text"', 'When you have Neo4j installed', 'When you have a vector store'], correct: 1, explain: 'GraphRAG\'s overhead (ontology, extraction, maintenance) only pays back when entities cross documents and queries cross entities.' },
+        { q: 'In production, who typically maintains the ontology and extraction prompts?', options: ['The frontend team', 'A data/ML team owning the KG — usually shared between engineering and the domain experts', 'Customers', 'No one — LLMs handle it'], correct: 1, explain: 'Ontology is a living artifact owned by a data team + domain experts. LLMs do extraction; humans curate the schema.' },
+        { q: 'A 5-hop traversal that joins 5 entity types in graph would look like (in SQL terms):', options: ['SELECT *', '4 INNER JOINs across 5 tables', 'A single subquery', 'CREATE TABLE'], correct: 1, explain: '5 entities ↔ 4 joins. Graphs make this query readable as a picture; SQL makes it readable as 4 explicit JOINs.' }
+      ],
+      scenarios: [
+        { q: 'A customer says "your RAG agent missed that two of my customers, both affected by the recall, are actually the same legal entity under different names." How do you fix this with GraphRAG?', modelAnswer: 'This is an entity-resolution problem GraphRAG can solve where vector RAG can\'t.\n\nFix:\n\n1. Add an entity resolution pipeline before insertion. When ingesting a new Customer record, fuzzy-match against existing ones on (name, tax_id, email domain, billing address). High-confidence matches merge into one node; low-confidence flag for human review.\n\n2. Model "alternate name" as a property or a SAME_AS relationship: (c1:Customer)-[:SAME_AS]->(c2:Customer). The traversal can then follow SAME_AS edges to collapse duplicates.\n\n3. In the recall scope query, MATCH with variable-depth SAME_AS:\nMATCH (s:Supplier {name:"SupplyCo"})<-[:FROM]-(...)-[:PLACED]-(c:Customer)\nWITH c\nMATCH (c)-[:SAME_AS*0..3]-(canonical:Customer)\nRETURN DISTINCT canonical\n\nThis collapses chains of aliases into the canonical customer.\n\n4. Provenance: every SAME_AS edge records who/what asserted the equivalence (LLM job, human reviewer, customer master record). When wrong, easy to roll back.\n\n5. Show this in the path field of the output: when reporting the affected customer, include "(also known as Foo Corp via record X)." Customer sees the dedup logic; trust increases.\n\nVector RAG cannot do this because entity resolution is structural, not similarity-based. The whole reason you invested in GraphRAG.' },
+        { q: 'You\'re pitching GraphRAG to a board. The CFO asks "why not just use vector RAG and add more compute?" 60-second answer.', modelAnswer: '"Compute won\'t fix this — it\'s a model-level problem. Vector RAG finds text that\'s similar to a query. It can\'t answer questions that depend on relationships across entities, no matter how big the vectors or how fast the GPU.\n\nConcrete: a customer asks \'Which of my Tier-A customers bought from the recalled supplier in Q1?\' Vector RAG might find a chunk that says \'we recalled SupplyCo products\' — but it can\'t join that to specific Customer entities, their tier, their orders, and the date range. To answer this we need to walk Supplier → Batch → Product → Order → Customer, then filter on tier. That\'s a graph traversal. No amount of vector compute makes that work.\n\nThe business consequence: every quarter we miss a question like this is a customer who churns to a competitor whose agent answered it. The CAC to replace those customers is 4× the entire GraphRAG infrastructure cost. We add graph as a layer next to vector — vector still handles simple lookups cheaply, graph handles the high-value structural questions. ROI breakeven in roughly two quarters."' },
+        { q: 'Engineering pushes back: "GraphRAG is overhead — let\'s not do it." When do you concede vs. push?', modelAnswer: 'Concede when:\n\n• Our corpus is genuinely flat — independent docs with no recurring entities. (E.g., a one-off research archive.)\n• Our queries are honestly all "what does this doc say." Run a log: if <5% of queries are multi-hop, GraphRAG is overkill.\n• We don\'t have the maintenance budget — ontology, extraction prompts, schema constraints need ongoing care.\n• Vector RAG is hitting >90% answer quality on our eval set already.\n\nPush when:\n\n• We can name 3+ real customer queries that vector RAG fails on, and each represents revenue.\n• Our domain has entity overlap (customers ↔ orders ↔ products ↔ accounts ↔ contracts).\n• Auditors or regulated buyers ask for "explainability" — path-based answers materially improve trust and close rates.\n• Failure modes from vector-only are silent (confidently wrong on multi-hop) and impossible to debug after the fact.\n\nMiddle path I usually advocate: GraphRAG only for the top 3-5 highest-value query types. Don\'t boil the ocean. Let vector RAG handle 95% of traffic; route the structural questions to graph. That gets 80% of the upside at 20% of the engineering investment.\n\nThe honest version of "is it overhead" is: it is overhead, but it pays back specifically on the queries that would have otherwise lost you customers. The math is per-query, not blanket.' }
+      ]
+    };
+
+    renderTest(TEST, document.getElementById('test-container'));
+    renderModuleNav('module-07', '#module-nav');
+    initWalkthroughs();
+  </script>
+</body>
+</html>

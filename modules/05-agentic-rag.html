@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module 5 — Agentic RAG · Agentic AI Course</title>
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/module.css">
+  <link rel="stylesheet" href="../assets/css/print.css">
+</head>
+<body data-module-id="module-05">
+
+  <header class="site-header" id="site-header"></header>
+
+  <section class="module-hero">
+    <div class="module-hero__inner">
+      <div class="num">Module 5</div>
+      <h1>Agentic RAG — Evidence-First Answers</h1>
+      <p class="subtitle">Retrieval that thinks. Adaptive strategies, query rewriting, reranking, and the evaluation signals that prove your agent isn't hallucinating.</p>
+      <div class="meta">
+        <span>⏱ ~75 min · 2 videos + 1 walkthrough · 10 MCQs + 3 scenarios · ≥80% to unlock M6</span>
+      </div>
+    </div>
+  </section>
+
+  <main class="container">
+
+    <h2 id="why">Why this matters</h2>
+    <p>
+      Traditional RAG is "embed query → top-k chunks → stuff into prompt → hope." It works for easy questions. It fails for ambiguous queries, multi-hop reasoning, and anything where the right answer requires the agent to <em>decide how to retrieve</em>, not just retrieve once. Agentic RAG fixes that — the agent rewrites queries, picks retrieval strategies, reranks, and grounds every claim in evidence.
+    </p>
+
+    <div class="objectives">
+      <h4>You'll be able to</h4>
+      <ul>
+        <li>Explain agentic RAG vs. traditional RAG with concrete examples</li>
+        <li>Specify adaptive retrieval (when to skip, retry, broaden, narrow)</li>
+        <li>Demand query rewriting + reranking on any non-trivial corpus</li>
+        <li>Insist on evidence-first answers (every claim cites a chunk)</li>
+        <li>Measure the four signals: groundedness, citation coverage, retrieval recall, faithfulness</li>
+      </ul>
+    </div>
+
+    <div class="toc">
+      <h4>Table of contents</h4>
+      <ol>
+        <li><a href="#vs">Agentic RAG vs. traditional RAG</a></li>
+        <li><a href="#adaptive">Adaptive retrieval strategies</a></li>
+        <li><a href="#rewriting">Query rewriting + reranking</a></li>
+        <li><a href="#evidence">Evidence-first answers (citations required)</a></li>
+        <li><a href="#evals">Evaluation signals you must track</a></li>
+        <li><a href="#books">Books &amp; deeper reading</a></li>
+        <li><a href="#resume">Founder skills + resume panel</a></li>
+        <li><a href="#test">Module test</a></li>
+      </ol>
+    </div>
+
+    <h2 id="vs" class="section-anchor">1. Agentic RAG vs. traditional RAG</h2>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 720 230" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Traditional vs Agentic RAG">
+        <defs><marker id="m5-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#3D5AFE"/></marker></defs>
+        <text x="180" y="25" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#1A1A1A" font-weight="700">Traditional RAG</text>
+        <rect x="20" y="45" width="80" height="36" rx="5" fill="#F3F0E8" stroke="#7A7A7A"/><text x="60" y="68" text-anchor="middle" font-size="10">query</text>
+        <line x1="100" y1="63" x2="125" y2="63" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#m5-arr)"/>
+        <rect x="130" y="45" width="80" height="36" rx="5" fill="#EDF0FF" stroke="#3D5AFE"/><text x="170" y="68" text-anchor="middle" font-size="10">retrieve top-k</text>
+        <line x1="210" y1="63" x2="235" y2="63" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#m5-arr)"/>
+        <rect x="240" y="45" width="80" height="36" rx="5" fill="#E6F4E6" stroke="#2E7D32"/><text x="280" y="68" text-anchor="middle" font-size="10">LLM → answer</text>
+        <text x="180" y="105" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#7A7A7A" font-style="italic">Single retrieval. No re-ranking. No self-check.</text>
+
+        <text x="540" y="25" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#1A1A1A" font-weight="700">Agentic RAG</text>
+        <rect x="360" y="45" width="70" height="36" rx="5" fill="#F3F0E8" stroke="#7A7A7A"/><text x="395" y="68" text-anchor="middle" font-size="10">query</text>
+        <line x1="430" y1="63" x2="445" y2="63" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#m5-arr)"/>
+        <rect x="450" y="45" width="80" height="36" rx="5" fill="#EDF0FF" stroke="#3D5AFE"/><text x="490" y="68" text-anchor="middle" font-size="10">rewrite query</text>
+        <line x1="530" y1="63" x2="545" y2="63" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#m5-arr)"/>
+        <rect x="550" y="45" width="80" height="36" rx="5" fill="#EDF0FF" stroke="#3D5AFE"/><text x="590" y="68" text-anchor="middle" font-size="10">multi-retrieve</text>
+        <line x1="630" y1="63" x2="645" y2="63" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#m5-arr)"/>
+        <rect x="650" y="45" width="60" height="36" rx="5" fill="#EDF0FF" stroke="#3D5AFE"/><text x="680" y="68" text-anchor="middle" font-size="10">rerank</text>
+        <line x1="590" y1="83" x2="590" y2="105" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#m5-arr)"/>
+        <rect x="490" y="110" width="200" height="36" rx="5" fill="#EDF0FF" stroke="#3D5AFE"/><text x="590" y="133" text-anchor="middle" font-size="10">LLM drafts w/ citations</text>
+        <line x1="490" y1="128" x2="465" y2="128" stroke="#B85C00" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#m5-arr)"/>
+        <rect x="360" y="110" width="100" height="36" rx="5" fill="#FFF1E0" stroke="#B85C00"/><text x="410" y="133" text-anchor="middle" font-size="10">grounded?</text>
+        <path d="M 410 146 Q 410 175 490 175 Q 540 175 540 81" stroke="#B85C00" stroke-width="1.2" stroke-dasharray="3 3" fill="none" marker-end="url(#m5-arr)"/>
+        <text x="410" y="170" text-anchor="middle" font-size="9" fill="#B85C00">if no → re-retrieve</text>
+        <rect x="360" y="180" width="100" height="36" rx="5" fill="#E6F4E6" stroke="#2E7D32"/><text x="410" y="203" text-anchor="middle" font-size="10">answer + cites</text>
+      </svg>
+      <figcaption>Traditional RAG: one shot, hope. Agentic RAG: the agent decides how to retrieve, evaluates groundedness, retrieves again if needed.</figcaption>
+    </figure>
+
+    <h2 id="adaptive" class="section-anchor">2. Adaptive retrieval strategies</h2>
+    <p>The agent picks the strategy <em>per query</em>:</p>
+    <ul>
+      <li><strong>Skip retrieval.</strong> If the question is parametric ("What's 2+2?"), don't retrieve. Saves cost and latency.</li>
+      <li><strong>Single-shot.</strong> Standard top-k. Good for direct factual questions.</li>
+      <li><strong>Multi-query.</strong> Generate N rewrites of the question, retrieve for each, union. Better recall for ambiguous queries.</li>
+      <li><strong>Step-back.</strong> Generalize the question first ("What's the company's refund policy" → "What's the company's customer service policy"), retrieve the broader context, then narrow.</li>
+      <li><strong>Hypothetical document (HyDE).</strong> Have the LLM generate what an answer would look like, embed that, retrieve. Counter-intuitively powerful for novel queries.</li>
+    </ul>
+
+    <h2 id="rewriting" class="section-anchor">3. Query rewriting + reranking</h2>
+    <p><strong>Rewriting</strong> turns user noise into clean queries. "ugh my order from like last week is broken can u fix it" becomes "Refund or replacement request for order placed approximately 7 days ago." The clean query embeds better.</p>
+    <p><strong>Reranking</strong> re-scores the top-50 retrieved chunks with a stronger model (Cohere Rerank, Voyage Rerank, or a cross-encoder). You keep the top-5 from that. Cost: one extra API call. Benefit: typically +15 to +20 points on answer quality.</p>
+
+    <figure class="video-embed">
+      <div class="video-embed__frame">
+        <iframe src="https://www.youtube.com/embed/ADrUp2cEdKg"
+                title="Advanced RAG Architectures: From Basic Retrieval to Agentic RAG — AWS re:Invent 2025"
+                loading="lazy" allowfullscreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+      </div>
+      <figcaption>
+        <span class="video-embed__meta">Watch · AWS · NASDAQ: AMZN · re:Invent 2025</span>
+        <strong>Advanced RAG Architectures: From Basic Retrieval to Agentic RAG</strong>
+        AWS's 60-minute deep-dive at re:Invent 2025. Walks the full progression — naive RAG → hybrid → rerank → agentic. Most useful section is when they show production failure modes from real customers.
+        <br><a class="video-embed__yt-link" href="https://www.youtube.com/watch?v=ADrUp2cEdKg" target="_blank" rel="noopener">Open on YouTube ↗</a>
+      </figcaption>
+    </figure>
+
+    <h2 id="evidence" class="section-anchor">4. Evidence-first answers</h2>
+    <p>The rule: <strong>no claim without a citation</strong>. Force the LLM to ground every fact in a retrieved chunk via structured output:</p>
+    <pre><code>class Answer(BaseModel):
+    text: str
+    citations: list[Citation]  # required, non-empty
+    confidence: float
+
+class Citation(BaseModel):
+    chunk_id: str
+    quote: str  # exact span from the chunk
+    relevance: float</code></pre>
+    <p>If the model can't cite, it must say "I don't have that information." This single rule reduces hallucination by 60–80% on retrieval-heavy tasks.</p>
+
+    <h2 id="evals" class="section-anchor">5. Evaluation signals you must track</h2>
+    <table class="compare-table">
+      <thead><tr><th>Signal</th><th>What it measures</th><th>How to check</th></tr></thead>
+      <tbody>
+        <tr><td>Retrieval recall</td><td>Did we retrieve the right chunks?</td><td>Labeled set: query + ground-truth chunk IDs. Measure recall@k.</td></tr>
+        <tr><td>Groundedness</td><td>Is the answer supported by the retrieved chunks?</td><td>LLM-as-judge: "Is this claim supported by these chunks?" yes/no per claim.</td></tr>
+        <tr><td>Citation coverage</td><td>% of claims with a citation</td><td>Parse output, count claims, count citations.</td></tr>
+        <tr><td>Faithfulness</td><td>Does the answer contradict any retrieved chunk?</td><td>LLM-as-judge: contradiction detection.</td></tr>
+      </tbody>
+    </table>
+
+    <figure class="video-embed">
+      <div class="video-embed__frame">
+        <iframe src="https://www.youtube.com/embed/KQYe5T96hnM"
+                title="RAG is Dead: Long Live Intelligent Retrieval-Augmented Generation — AWS re:Invent 2025"
+                loading="lazy" allowfullscreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+      </div>
+      <figcaption>
+        <span class="video-embed__meta">Watch · AWS · NASDAQ: AMZN · re:Invent 2025</span>
+        <strong>"RAG is Dead": Long Live Intelligent Retrieval-Augmented Generation</strong>
+        Provocative title, substantive content. AWS's argument: naive vector RAG is dead — the future is intelligent, agentic, multi-strategy retrieval. Watch for the failure-mode analysis halfway through.
+        <br><a class="video-embed__yt-link" href="https://www.youtube.com/watch?v=KQYe5T96hnM" target="_blank" rel="noopener">Open on YouTube ↗</a>
+      </figcaption>
+    </figure>
+
+    <div class="walkthrough" data-walkthrough-id="m5-agentic-rag">
+      <div class="walkthrough__header"><h4 class="walkthrough__title">▷ Step through: an agentic RAG query</h4><span class="walkthrough__subtitle">6 steps · ambiguous customer question</span></div>
+      <div class="walkthrough__viewport">
+        <svg viewBox="0 0 700 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Agentic RAG walkthrough">
+          <defs><marker id="wt-m5-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#3D5AFE"/></marker></defs>
+          <g data-wf="1,2,3,4,5,6"><rect x="20" y="30" width="660" height="34" rx="6" fill="#F3F0E8" stroke="#7A7A7A"/><text x="32" y="50" font-family="Inter, sans-serif" font-size="11" fill="#1A1A1A">User query: "the thing I bought last week stopped working, what do I do?"</text></g>
+          <g data-wf="2,3,4,5,6"><rect x="20" y="80" width="200" height="42" rx="6" fill="#EDF0FF" stroke="#3D5AFE"/><text x="120" y="98" text-anchor="middle" font-size="10" font-weight="700">REWRITE</text><text x="120" y="113" text-anchor="middle" font-size="9">"Return or warranty claim for...</text></g>
+          <g data-wf="3,4,5,6"><line x1="220" y1="101" x2="245" y2="101" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#wt-m5-arr)"/><rect x="250" y="80" width="200" height="42" rx="6" fill="#EDF0FF" stroke="#3D5AFE"/><text x="350" y="98" text-anchor="middle" font-size="10" font-weight="700">HYBRID RETRIEVE</text><text x="350" y="113" text-anchor="middle" font-size="9">vector + BM25 · top-50</text></g>
+          <g data-wf="4,5,6"><line x1="450" y1="101" x2="475" y2="101" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#wt-m5-arr)"/><rect x="480" y="80" width="200" height="42" rx="6" fill="#EDF0FF" stroke="#3D5AFE"/><text x="580" y="98" text-anchor="middle" font-size="10" font-weight="700">RERANK</text><text x="580" y="113" text-anchor="middle" font-size="9">→ top-5 most relevant</text></g>
+          <g data-wf="5,6"><rect x="20" y="150" width="320" height="42" rx="6" fill="#EDF0FF" stroke="#3D5AFE" stroke-width="2"/><text x="180" y="168" text-anchor="middle" font-size="10" font-weight="700">DRAFT ANSWER WITH CITATIONS</text><text x="180" y="183" text-anchor="middle" font-size="9">"Within 30 days you can... [chunk-A2]"</text></g>
+          <g data-wf="6"><line x1="340" y1="171" x2="365" y2="171" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#wt-m5-arr)"/><rect x="370" y="150" width="180" height="42" rx="6" fill="#FFF1E0" stroke="#B85C00"/><text x="460" y="168" text-anchor="middle" font-size="10" font-weight="700">GROUNDEDNESS CHECK</text><text x="460" y="183" text-anchor="middle" font-size="9">every claim cited? yes ✓</text></g>
+          <g data-wf="6"><line x1="550" y1="171" x2="575" y2="171" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#wt-m5-arr)"/><rect x="580" y="150" width="100" height="42" rx="6" fill="#E6F4E6" stroke="#2E7D32"/><text x="630" y="168" text-anchor="middle" font-size="10" font-weight="700">RETURN</text><text x="630" y="183" text-anchor="middle" font-size="9">+ confidence</text></g>
+          <g data-wf="6"><rect x="100" y="220" width="500" height="40" rx="6" fill="#F3F0E8" stroke="#7A7A7A"/><text x="350" y="245" text-anchor="middle" font-size="11" fill="#1A1A1A">User receives an answer with quotes from the policy doc — verifiable.</text></g>
+        </svg>
+      </div>
+      <div class="walkthrough__caption"><h4 class="walkthrough__step-title"></h4><p class="walkthrough__step-body"></p></div>
+      <div class="walkthrough__controls"><button class="walkthrough__nav-btn" data-action="prev">←</button><span class="walkthrough__step-indicator"></span><button class="walkthrough__nav-btn" data-action="next">→</button><button class="walkthrough__play-btn" data-action="play">▶ Play</button></div>
+    </div>
+
+    <section class="books-section section-anchor" id="books">
+      <h2>📚 Books &amp; Deeper Reading</h2>
+      <div class="books-grid">
+        <div class="book-card"><h4>AI Engineering — Ch. 4 "Retrieval Augmented Generation"</h4><div class="author">Chip Huyen · 2024</div><div class="why">The most pragmatic chapter on RAG production tradeoffs. Read twice.</div><div class="meta">Paid · ~40 pp</div></div>
+        <div class="book-card"><h4>Self-RAG paper</h4><div class="author">Asai et al. · 2023</div><div class="why">Foundational paper on retrieval that critiques and revises itself. Read the abstract + Section 3.</div><div class="meta meta--free">Free · <a href="https://arxiv.org/abs/2310.11511" target="_blank" rel="noopener">arxiv.org/abs/2310.11511 ↗</a></div></div>
+        <div class="book-card"><h4>RAGAS evaluation framework</h4><div class="author">Open source</div><div class="why">The canonical eval library for RAG. Implement groundedness, faithfulness, and answer relevancy from this.</div><div class="meta meta--free">Free · <a href="https://github.com/explodinggradients/ragas" target="_blank" rel="noopener">github.com/explodinggradients/ragas ↗</a></div></div>
+        <div class="book-card"><h4>OpenAI Cookbook — RAG recipes</h4><div class="author">OpenAI</div><div class="why">Multiple production patterns with code. The HyDE and step-back recipes are gold.</div><div class="meta meta--free">Free · <a href="https://cookbook.openai.com/" target="_blank" rel="noopener">cookbook.openai.com ↗</a></div></div>
+      </div>
+    </section>
+
+    <section id="resume" class="resume-panel section-anchor">
+      <h2>🚀 What You Can Now Build (and Claim)</h2>
+      <h3>What you can now design end-to-end</h3>
+      <ul style="margin: 0 0 1.25rem 0.4rem; padding-left: 1.1rem;">
+        <li>Move your team from "naive vector RAG" to agentic RAG with rewriting, hybrid retrieval, reranking, and groundedness checks.</li>
+        <li>Specify "evidence-first" output schemas — every claim cites, or the model says "I don't know."</li>
+        <li>Set up the four eval signals (recall, groundedness, citation coverage, faithfulness) and put them in a weekly review.</li>
+        <li>Pick the right retrieval strategy per query type — including skipping retrieval when the question is parametric.</li>
+      </ul>
+      <h3>Resume bullets you can defend</h3>
+      <div class="resume-bullet" data-copy-text="Architected agentic RAG systems with query rewriting, hybrid vector+BM25 retrieval, cross-encoder reranking, and self-critique groundedness loops — reducing hallucination rate by 60-80% on retrieval-heavy tasks.">Architected agentic RAG systems with query rewriting, hybrid vector+BM25 retrieval, cross-encoder reranking, and self-critique groundedness loops — reducing hallucination rate by 60-80% on retrieval-heavy tasks.<button class="copy-btn">Copy</button></div>
+      <div class="resume-bullet" data-copy-text="Enforced evidence-first answer schemas (every claim cites a retrieved chunk) and instrumented four RAG eval signals (retrieval recall, groundedness, citation coverage, faithfulness) in a weekly quality review.">Enforced evidence-first answer schemas (every claim cites a retrieved chunk) and instrumented four RAG eval signals (retrieval recall, groundedness, citation coverage, faithfulness) in a weekly quality review.<button class="copy-btn">Copy</button></div>
+      <h3>Likely interview / investor / hiring questions</h3>
+      <div class="qa"><div class="q">Q: How do you prevent hallucination in a RAG system?</div><div class="a">A: Three layers. (1) Evidence-first output schema — every claim must include a citation to a retrieved chunk; if the model can't cite, it must say "I don't know." (2) Groundedness check post-generation — an LLM-as-judge call asks "is this claim supported by these chunks?" If no, retry or escalate. (3) Continuous eval on a labeled set tracking groundedness, citation coverage, faithfulness — so you catch drift before users do. Together: ~80% reduction in confident-wrong outputs.</div></div>
+      <div class="qa"><div class="q">Q: When is reranking worth the extra cost?</div><div class="a">A: Almost always, on non-trivial corpora. Reranking adds one API call (~$0.001 per query) and typically lifts answer quality 15-20 points. The exception is when your top-5 is already near-perfect — measure recall@5 before adding rerank. If it's already 95%+, skip the rerank.</div></div>
+    </section>
+
+    <section id="test" class="section-anchor"><div id="test-container"></div></section>
+    <nav class="module-nav" id="module-nav"></nav>
+  </main>
+
+  <footer class="site-footer"><div>Full Stack Agentic AI Engineering · Module 5 · <a href="../index.html">Course home</a></div></footer>
+
+  <script src="../assets/js/progress.js"></script>
+  <script src="../assets/js/test-engine.js"></script>
+  <script src="../assets/js/nav.js"></script>
+  <script src="../assets/js/ui.js"></script>
+  <script src="../assets/js/walkthroughs.js"></script>
+  <script src="../assets/data/syllabus.js"></script>
+  <script>
+    renderSiteHeader('#site-header', '../');
+
+    window.WALKTHROUGHS['m5-agentic-rag'] = {
+      frames: [
+        { title: '1. Messy user query arrives', body: 'A real user asks: "the thing I bought last week stopped working, what do I do?" Bad spelling, vague reference, no specifics. Traditional RAG would embed this as-is and retrieve mediocre matches.' },
+        { title: '2. Query rewrite', body: 'The agent first rewrites the query: "Return or warranty claim for product purchased approximately 7 days ago — what is the process?" The rewrite extracts intent, normalizes vocabulary, makes the embedding much more aligned with policy doc language.' },
+        { title: '3. Hybrid retrieval', body: 'Retrieve top-50 chunks using BOTH vector similarity (semantic) AND BM25 (lexical match). Vector catches "warranty claim" matching "return policy"; BM25 catches exact terms like product SKUs or policy clause numbers. Union of both.' },
+        { title: '4. Rerank to top-5', body: 'A cross-encoder reranker (Cohere Rerank, Voyage) scores each of the 50 against the query and keeps the 5 most relevant. One extra API call, ~$0.001, typical +15-20 point quality lift on the answer.' },
+        { title: '5. Draft answer with citations', body: 'The LLM produces an answer where every claim has a citation: { text: "Within 30 days you can request a return [chunk-A2]...", citations: [{ chunk_id: "A2", quote: "30-day return window applies to..." }] }. Schema-validated — non-empty citations required.' },
+        { title: '6. Groundedness check + return', body: 'Before sending to the user, an LLM-as-judge verifies: is every claim actually supported by the cited chunks? If yes, return answer with confidence score. If no, retry (re-retrieve with broader query) or escalate. This loop is what makes RAG truly "agentic."' }
+      ]
+    };
+
+    const TEST = {
+      moduleId: 'module-05',
+      mcqs: [
+        { q: 'What distinguishes agentic RAG from traditional RAG?', options: ['Uses a larger model', 'The agent decides how to retrieve (rewrite, multi-strategy, rerank, groundedness check)', 'Skips embeddings', 'Always uses GPT-4'], correct: 1, explain: 'Agentic RAG adds intelligence to the retrieval process — query rewriting, strategy selection, reranking, self-evaluation of groundedness.' },
+        { q: 'When should an agentic RAG system SKIP retrieval entirely?', options: ['Never', 'When the question is parametric ("What is 2+2?")', 'When the user is logged out', 'When the corpus is empty'], correct: 1, explain: 'Parametric questions (the LLM already knows the answer) shouldn\'t trigger retrieval — wastes cost and latency.' },
+        { q: 'Hybrid search combines:', options: ['Two LLMs', 'Vector similarity + keyword (BM25) search', 'RAG + fine-tuning', 'Retrieval + reflection'], correct: 1, explain: 'Hybrid = vector (semantic) + BM25 (lexical). Captures both meaning and exact-match cases. Standard +15-20 point recall boost.' },
+        { q: 'What\'s a reranker?', options: ['A second-pass model that re-scores top-N retrievals for relevance', 'A query rewriter', 'A chunking algorithm', 'A vector store'], correct: 0, explain: 'Reranker re-scores the top-50 retrieved chunks (typically with a cross-encoder) and keeps the top-5. One extra API call; large quality lift.' },
+        { q: 'In "evidence-first" answers, what happens if the LLM can\'t cite a source?', options: ['It guesses confidently', 'It must say "I don\'t have that information"', 'It calls a different model', 'It retries automatically'], correct: 1, explain: 'No citation = no claim. The model must refuse rather than fabricate. This rule alone cuts hallucination 60-80%.' },
+        { q: 'Which eval signal measures "did we retrieve the right chunks"?', options: ['Groundedness', 'Citation coverage', 'Retrieval recall', 'Faithfulness'], correct: 2, explain: 'Retrieval recall = labeled query/ground-truth pairs, measure recall@k. Distinct from groundedness (is the answer supported) and faithfulness (does it contradict).' },
+        { q: 'Step-back prompting does what?', options: ['Truncates context to save cost', 'Generalizes the question first, retrieves broader context, then narrows', 'Reverts to a prior LLM version', 'Cancels the retrieval'], correct: 1, explain: 'Step-back: ask a broader version of the question first (e.g., "refund policy" → "customer service policy"), retrieve, then narrow. Useful when specific queries miss relevant context.' },
+        { q: 'HyDE (Hypothetical Document Embeddings) involves:', options: ['Embedding the question directly', 'Having the LLM draft a hypothetical answer first, then embedding that for retrieval', 'Skipping retrieval', 'Using a hybrid index'], correct: 1, explain: 'HyDE: LLM imagines what an answer would look like, that imagined doc gets embedded, retrieval finds similar real docs. Counter-intuitive but effective for novel queries.' },
+        { q: 'Citation coverage measures:', options: ['How many chunks were retrieved', '% of claims in the answer with a citation', 'Total token cost', 'Retrieval latency'], correct: 1, explain: 'Citation coverage = (cited claims) / (total claims). 100% means every claim is grounded. Below 80% means the model is fabricating.' },
+        { q: 'Your agentic RAG system has 95% recall@5 already. Should you add a reranker?', options: ['Always yes — reranking always helps', 'Probably not — diminishing returns, measure first', 'Yes, to reduce cost', 'No, rerankers reduce recall'], correct: 1, explain: 'At 95% recall@5 the top-5 is nearly perfect. Reranker adds cost for marginal benefit. Measure first; add only when the lift justifies it.' }
+      ],
+      scenarios: [
+        { q: 'Your B2B SaaS RAG agent confidently gives wrong contract terms to customers. Engineers say "the LLM is hallucinating." Walk through your fix in order of cost.', modelAnswer: 'Cheapest fixes first:\n\n1. (1 day) Enforce evidence-first schema. Every claim must cite a chunk_id + quote. If the model can\'t cite, it returns "I don\'t have that information." This single change typically cuts hallucination 60-80%.\n\n2. (1 day) Add groundedness check. Post-generation LLM-as-judge: "Is each claim supported by these chunks?" If no, retry with broader retrieval. Adds one LLM call per query (~$0.003).\n\n3. (2-3 days) Audit retrieval. Sample 50 wrong answers; check if the right chunk was retrieved. If not (likely), fix chunking — try 3 chunk sizes. Add hybrid (BM25+vector). Add reranker.\n\n4. (1 week) Build labeled eval set. 200 query/correct-answer pairs. Run the four signals weekly: recall, groundedness, citation coverage, faithfulness. Wire to dashboard.\n\n5. (3+ weeks) Only after the above: consider fine-tuning, larger model, or specialized embeddings.\n\nWeek 1 catches 80% of cases for <$5k engineering cost. Don\'t skip to step 5.' },
+        { q: 'A founder asks "We have 50,000 PDF contracts. Customers ask questions across them. Vector RAG worked for 100 docs; doesn\'t scale here." What changes for 50k docs?', modelAnswer: 'Several:\n\n1. Embedder choice matters more. At 50k docs you have millions of chunks. Re-embedding to swap models is expensive — pick once, pick well. text-embedding-3-large or Voyage are safe defaults; benchmark on your corpus.\n\n2. Vector store choice matters. Pinecone or Qdrant for managed; pgvector with HNSW index if you want to keep data in-house. Chroma falls over at this scale.\n\n3. Metadata filtering is now essential. Tag each chunk with contract_type, jurisdiction, date, customer. Filter before vector search to slash search space — often 10× speedup, 2× quality.\n\n4. Hybrid is non-negotiable. With 50k contracts, exact-match for clause numbers, party names, dates matters. Vector alone misses these. Add BM25.\n\n5. Reranker is now mandatory. Top-50 from hybrid → top-5 from reranker. The signal-to-noise at this scale demands it.\n\n6. Hierarchical retrieval. Two-stage: first retrieve the relevant contract (using doc-level summary embeddings), then chunks within. Cuts noise massively.\n\n7. Eval at scale. 200 labeled cases isn\'t enough. Aim 1,000+ across contract types and customer segments. Run weekly.\n\nBudget: 4-6 engineering weeks to upgrade from "100-doc RAG" to "50k-doc agentic RAG." Worth it.' },
+        { q: 'An auditor asks "for the agent\'s last 100 financial answers, can you prove what evidence was used and that no claim was unsupported?" What do you have to show?', modelAnswer: 'I show four things:\n\n1. The structured answer log. Every answer is stored as { text, citations[], confidence, retrieved_chunk_ids[] }. Query the last 100 answers by timestamp.\n\n2. The chunk store. Each citation points to a specific chunk_id with a versioned document, exact text, and source URL. Auditor can click through from any citation to the underlying source.\n\n3. The groundedness check log. For each answer, the post-generation judge result is logged: "claim 1: supported by chunk-A; claim 2: supported by chunk-B; ...". If anything failed groundedness and was returned anyway, that\'s visible in the log.\n\n4. The eval dashboard. Last 90 days of groundedness, citation coverage, and faithfulness rates. Trend lines. Alert thresholds.\n\nWhat I can prove to the auditor: every answer either (a) has citations to real chunks of real documents OR (b) was a refusal. No "claim without a citation" passed the schema. If any did, that\'s a P0 incident in the bug tracker, also visible.\n\nThis is the difference between "trust our LLM" (not auditable) and "structured evidence chain with continuous evaluation" (auditable).' }
+      ]
+    };
+
+    renderTest(TEST, document.getElementById('test-container'));
+    renderModuleNav('module-05', '#module-nav');
+    initWalkthroughs();
+  </script>
+</body>
+</html>

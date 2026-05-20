@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module 12 — Databricks Text-to-SQL · Agentic AI Course</title>
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/module.css">
+  <link rel="stylesheet" href="../assets/css/print.css">
+</head>
+<body data-module-id="module-12">
+
+  <header class="site-header" id="site-header"></header>
+
+  <section class="module-hero">
+    <div class="module-hero__inner">
+      <div class="num">Module 12 — Capstone</div>
+      <h1>Governed Text-to-SQL Agent (Databricks)</h1>
+      <p class="subtitle">The capstone use case. Natural language in, governed SQL out, approved by humans, results landed in Delta — every guardrail from this course working together.</p>
+      <div class="meta"><span>⏱ ~75 min · 3 videos + 1 walkthrough · 10 MCQs + 3 scenarios · ≥80% to complete the course</span></div>
+    </div>
+  </section>
+
+  <main class="container">
+
+    <h2 id="why">Why this matters</h2>
+    <p>
+      "Let business users ask data questions in English" is the #1 internal AI use case in 2026, by a wide margin. Done well, it democratizes data access. Done badly, it leaks PII, runs queries that scan the whole warehouse, fabricates numbers, or runs DROP TABLE on the production database. This module assembles everything you\'ve learned — agents, RAG, schema-aware generation, HITL, evaluation, governance — into one capstone pattern: <strong>schema-aware Text-to-SQL with views-only access, approval gates, and full audit on Databricks (or any modern warehouse — patterns transfer).</strong>
+    </p>
+
+    <div class="objectives">
+      <h4>You'll be able to</h4>
+      <ul>
+        <li>Spec a governed Text-to-SQL agent end to end</li>
+        <li>Apply Unity Catalog (or Snowflake / BigQuery equivalent) for permissions, lineage, masking</li>
+        <li>Enforce views-only access and SELECT-only generation</li>
+        <li>Inject schema into prompts (columns, types, descriptions) for accurate SQL</li>
+        <li>Insert approval gates before executing generated queries</li>
+        <li>Write results to Delta + log every run for audit</li>
+      </ul>
+    </div>
+
+    <div class="toc">
+      <h4>Table of contents</h4>
+      <ol>
+        <li><a href="#uc">Unity Catalog fundamentals</a></li>
+        <li><a href="#views">Views-only pattern</a></li>
+        <li><a href="#schema">Schema-aware SQL generation</a></li>
+        <li><a href="#validate">SQL validation (SELECT-only + LIMIT)</a></li>
+        <li><a href="#approval">Approval gate</a></li>
+        <li><a href="#delta">Results in Delta + run registry</a></li>
+        <li><a href="#books">Books &amp; deeper reading</a></li>
+        <li><a href="#resume">Founder skills + resume panel</a></li>
+        <li><a href="#test">Module test</a></li>
+      </ol>
+    </div>
+
+    <h2 id="uc" class="section-anchor">1. Unity Catalog fundamentals</h2>
+    <p><strong>Unity Catalog (UC)</strong> is Databricks\' governance layer. Three-level namespace:</p>
+    <ul>
+      <li><strong>Catalog</strong> — top-level (typically per environment: <code>prod</code>, <code>staging</code>).</li>
+      <li><strong>Schema</strong> (database) — groups related tables/views (<code>prod.sales</code>, <code>prod.support</code>).</li>
+      <li><strong>Table / View</strong> — the actual data.</li>
+    </ul>
+    <p>Permissions are granted at any level. Row-level filters, column masks, and lineage tracking are first-class. <strong>Snowflake</strong> and <strong>BigQuery</strong> have equivalents (Snowflake DB.SCHEMA.TABLE + dynamic data masking; BigQuery dataset.table + policy tags). Patterns in this module transfer.</p>
+
+    <h2 id="views" class="section-anchor">2. Views-only pattern</h2>
+    <p>
+      <strong>Rule:</strong> the agent\'s SQL credential has access to <em>views</em>, never base tables. Views are designed for AI access — they:
+    </p>
+    <ul>
+      <li>Filter rows (only rows this caller is allowed to see)</li>
+      <li>Mask columns (no SSN, no full credit card numbers)</li>
+      <li>Compute pre-aggregated fields (saves the agent from having to do joins it might get wrong)</li>
+      <li>Document themselves with column descriptions</li>
+    </ul>
+    <p>Architecturally, this is the same idea as Module 9\'s allowlists — narrow what the agent can touch. Cannot exfiltrate what cannot be reached.</p>
+
+    <figure class="video-embed">
+      <div class="video-embed__frame">
+        <iframe src="https://www.youtube.com/embed/oSAlOA4mrYo"
+                title="AI/BI Genie + Databricks SQL Serverless + Unity Catalog Demo"
+                loading="lazy" allowfullscreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+      </div>
+      <figcaption>
+        <span class="video-embed__meta">Watch · Databricks · Capstone reference</span>
+        <strong>AI/BI Genie + Databricks SQL Serverless + Unity Catalog Demo</strong>
+        Official Databricks demo. Genie is their managed Text-to-SQL agent. The end-to-end demo shows exactly the pattern we describe here — schema-aware generation, Unity Catalog permissions, Delta results.
+        <br><a class="video-embed__yt-link" href="https://www.youtube.com/watch?v=oSAlOA4mrYo" target="_blank" rel="noopener">Open on YouTube ↗</a>
+      </figcaption>
+    </figure>
+
+    <h2 id="schema" class="section-anchor">3. Schema-aware SQL generation</h2>
+    <p>
+      The cardinal rule of Text-to-SQL: <strong>inject the relevant schema into the prompt</strong>. Don\'t hope the LLM knows your table layout — give it the columns, types, and descriptions for the views in scope.
+    </p>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 700 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Schema-aware SQL generation">
+        <defs><marker id="m12-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#3D5AFE"/></marker></defs>
+        <rect x="20" y="20" width="660" height="34" rx="6" fill="#F3F0E8" stroke="#7A7A7A"/><text x="32" y="42" font-size="11">User: "How many enterprise customers churned last quarter?"</text>
+        <line x1="350" y1="54" x2="350" y2="78" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#m12-arr)"/>
+        <rect x="20" y="80" width="320" height="120" rx="6" fill="#EDF0FF" stroke="#3D5AFE"/>
+        <text x="32" y="100" font-size="10" fill="#3D5AFE" font-weight="700">PROMPT INPUT</text>
+        <text x="32" y="118" font-family="SF Mono, monospace" font-size="9">view: prod.sales.v_customers</text>
+        <text x="32" y="131" font-family="SF Mono, monospace" font-size="9">  customer_id INT, tier STRING,</text>
+        <text x="32" y="144" font-family="SF Mono, monospace" font-size="9">  signup_date DATE, churn_date DATE,</text>
+        <text x="32" y="157" font-family="SF Mono, monospace" font-size="9">  region STRING</text>
+        <text x="32" y="174" font-family="SF Mono, monospace" font-size="9">DESC: "Customer master view (PII masked)"</text>
+        <text x="32" y="191" font-family="SF Mono, monospace" font-size="9">+ question + few-shot examples</text>
+        <line x1="340" y1="140" x2="365" y2="140" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#m12-arr)"/>
+        <rect x="370" y="80" width="310" height="60" rx="6" fill="#EDF0FF" stroke="#3D5AFE" stroke-width="2"/>
+        <text x="525" y="100" text-anchor="middle" font-size="11" font-weight="700">LLM (with structured output)</text>
+        <text x="525" y="118" text-anchor="middle" font-size="10">→ { sql, explanation, confidence }</text>
+        <text x="525" y="132" text-anchor="middle" font-size="9" fill="#7A7A7A">schema-validated JSON</text>
+        <line x1="525" y1="140" x2="525" y2="170" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#m12-arr)"/>
+        <rect x="370" y="175" width="310" height="42" rx="6" fill="#E6F4E6" stroke="#2E7D32"/>
+        <text x="525" y="195" text-anchor="middle" font-size="11" font-weight="700">SELECT count(*) FROM v_customers</text>
+        <text x="525" y="210" text-anchor="middle" font-size="10">WHERE tier=\'enterprise\' AND churn_date BETWEEN ...</text>
+      </svg>
+      <figcaption>The schema-aware loop. The LLM sees only views (not base tables), with full column metadata, and outputs structured JSON. Free-form SQL never crosses the boundary.</figcaption>
+    </figure>
+
+    <h2 id="validate" class="section-anchor">4. SQL validation (SELECT-only + LIMIT)</h2>
+    <p>Before <em>any</em> generated SQL is dispatched, validate:</p>
+    <ul>
+      <li><strong>SELECT-only.</strong> Parse the SQL. Reject anything that isn\'t a SELECT statement. No INSERT, UPDATE, DELETE, DROP, CREATE.</li>
+      <li><strong>Referenced objects on the allowlist.</strong> Parse the FROM clauses. Confirm all tables/views are on the configured allowlist (typically the v_* views in your catalog). Reject if anything else.</li>
+      <li><strong>LIMIT enforced.</strong> If the query doesn\'t have a LIMIT, inject one (e.g., 1000). Stops a runaway SELECT * from scanning a 10TB table.</li>
+      <li><strong>Cost preview.</strong> For Databricks SQL or BigQuery, you can <em>dry-run</em> the query — get the estimated bytes scanned before executing. Block queries above a threshold.</li>
+    </ul>
+
+    <h2 id="approval" class="section-anchor">5. Approval gate</h2>
+    <p>For non-trivial queries, route through HITL before execution. The reviewer sees: the user\'s question, the generated SQL, the LLM\'s explanation, the dry-run cost. Approve / edit / reject. (Same pattern as Module 1.)</p>
+    <p>Which queries to gate:</p>
+    <ul>
+      <li>Anything writing to a table (in our pattern: only the run registry, but if you allow more, gate them).</li>
+      <li>Anything above a cost threshold (e.g., &gt;1GB scanned).</li>
+      <li>Anything from a new user without a track record.</li>
+      <li>First time the agent sees a never-before-asked question pattern.</li>
+    </ul>
+    <p>Auto-approve everything else, but log and sample-audit 5–10%.</p>
+
+    <figure class="video-embed">
+      <div class="video-embed__frame">
+        <iframe src="https://www.youtube.com/embed/So9GyWTSyAc"
+                title="Turn Genie Into an Agent Using Conversation APIs — Databricks"
+                loading="lazy" allowfullscreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+      </div>
+      <figcaption>
+        <span class="video-embed__meta">Watch · Databricks</span>
+        <strong>Turn Genie Into an Agent Using Conversation APIs</strong>
+        How Databricks wraps Genie as a multi-turn agent. Useful for understanding how the Text-to-SQL surface integrates into broader agentic flows.
+        <br><a class="video-embed__yt-link" href="https://www.youtube.com/watch?v=So9GyWTSyAc" target="_blank" rel="noopener">Open on YouTube ↗</a>
+      </figcaption>
+    </figure>
+
+    <h2 id="delta" class="section-anchor">6. Results in Delta + run registry</h2>
+    <p>Once approved and executed:</p>
+    <ul>
+      <li><strong>Write the result set to a Delta table</strong> (Databricks\' open table format). Now reusable, auditable, and version-controlled.</li>
+      <li><strong>Log a "run registry" row</strong>: user, original question, generated SQL, approver, execution time, bytes scanned, result-set Delta path. Searchable. Compliance-ready.</li>
+      <li><strong>Return a link, not the data</strong>, for large result sets. User opens the Delta result in a notebook or BI tool — keeps PII contained, supports reuse.</li>
+    </ul>
+
+    <figure class="video-embed">
+      <div class="video-embed__frame">
+        <iframe src="https://www.youtube.com/embed/gGbGqR49kMQ"
+                title="Data Governance & AI Insights with Unity Catalog and AI/BI Genie — Databricks"
+                loading="lazy" allowfullscreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+      </div>
+      <figcaption>
+        <span class="video-embed__meta">Watch · Databricks</span>
+        <strong>Data Governance &amp; AI Insights with Unity Catalog + AI/BI Genie</strong>
+        Specifically the governance angle — how UC permissions, lineage, and masking compose with Genie. The most relevant 30 minutes for founders facing compliance reviews.
+        <br><a class="video-embed__yt-link" href="https://www.youtube.com/watch?v=gGbGqR49kMQ" target="_blank" rel="noopener">Open on YouTube ↗</a>
+      </figcaption>
+    </figure>
+
+    <div class="walkthrough" data-walkthrough-id="m12-textsql">
+      <div class="walkthrough__header"><h4 class="walkthrough__title">▷ Step through: a governed Text-to-SQL run</h4><span class="walkthrough__subtitle">6 steps · question to Delta result</span></div>
+      <div class="walkthrough__viewport">
+        <svg viewBox="0 0 700 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Text-to-SQL walkthrough">
+          <g data-wf="1,2,3,4,5,6"><rect x="20" y="20" width="660" height="34" rx="6" fill="#F3F0E8" stroke="#7A7A7A"/><text x="32" y="42" font-size="11">User asks: "How many enterprise customers churned last quarter, by region?"</text></g>
+          <g data-wf="2,3,4,5,6"><rect x="20" y="65" width="200" height="40" rx="6" fill="#EDF0FF" stroke="#3D5AFE"/><text x="120" y="85" text-anchor="middle" font-size="10" font-weight="700">INJECT SCHEMA</text><text x="120" y="99" text-anchor="middle" font-size="9">v_customers view + columns</text></g>
+          <g data-wf="3,4,5,6"><rect x="240" y="65" width="200" height="40" rx="6" fill="#EDF0FF" stroke="#3D5AFE"/><text x="340" y="85" text-anchor="middle" font-size="10" font-weight="700">LLM GENERATES SQL</text><text x="340" y="99" text-anchor="middle" font-size="9">structured: { sql, explanation }</text></g>
+          <g data-wf="4,5,6"><rect x="460" y="65" width="220" height="40" rx="6" fill="#FFF1E0" stroke="#B85C00"/><text x="570" y="85" text-anchor="middle" font-size="10" font-weight="700">VALIDATE</text><text x="570" y="99" text-anchor="middle" font-size="9">SELECT-only · allowlisted views · LIMIT</text></g>
+          <g data-wf="5,6"><rect x="20" y="115" width="320" height="40" rx="6" fill="#FFF1E0" stroke="#B85C00"/><text x="180" y="135" text-anchor="middle" font-size="10" font-weight="700">APPROVAL GATE (if cost > 1GB or new pattern)</text><text x="180" y="149" text-anchor="middle" font-size="9">human reviews SQL + dry-run cost</text></g>
+          <g data-wf="6"><rect x="360" y="115" width="320" height="40" rx="6" fill="#E6F4E6" stroke="#2E7D32"/><text x="520" y="135" text-anchor="middle" font-size="10" font-weight="700">EXECUTE → DELTA RESULT</text><text x="520" y="149" text-anchor="middle" font-size="9">results written to delta table</text></g>
+          <g data-wf="6"><rect x="20" y="170" width="660" height="60" rx="6" fill="#F3F0E8" stroke="#7A7A7A"/><text x="32" y="190" font-size="10" font-weight="700">RUN REGISTRY</text><text x="32" y="206" font-family="SF Mono, monospace" font-size="10">user, question, sql, approver, execution_ms, bytes_scanned, result_delta_path, ts</text><text x="32" y="221" font-size="9" fill="#7A7A7A">Searchable. Auditable. Reusable.</text></g>
+          <g data-wf="6"><text x="350" y="260" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#1A1A1A" font-style="italic">Every guardrail from this course working in concert. This is the production-grade pattern.</text></g>
+        </svg>
+      </div>
+      <div class="walkthrough__caption"><h4 class="walkthrough__step-title"></h4><p class="walkthrough__step-body"></p></div>
+      <div class="walkthrough__controls"><button class="walkthrough__nav-btn" data-action="prev">←</button><span class="walkthrough__step-indicator"></span><button class="walkthrough__nav-btn" data-action="next">→</button><button class="walkthrough__play-btn" data-action="play">▶ Play</button></div>
+    </div>
+
+    <section class="books-section section-anchor" id="books">
+      <h2>📚 Books &amp; Deeper Reading</h2>
+      <div class="books-grid">
+        <div class="book-card"><h4>Databricks AI/BI Genie docs</h4><div class="author">Databricks</div><div class="why">Canonical reference for the Genie product. Read "Setup," "Authoring," and "Governance" sections.</div><div class="meta meta--free">Free · <a href="https://docs.databricks.com/aws/en/genie/" target="_blank" rel="noopener">docs.databricks.com ↗</a></div></div>
+        <div class="book-card"><h4>Unity Catalog docs</h4><div class="author">Databricks</div><div class="why">Permissions, lineage, row filters, column masks. The governance layer that makes the patterns in this module enforceable.</div><div class="meta meta--free">Free · <a href="https://docs.databricks.com/aws/en/data-governance/unity-catalog/" target="_blank" rel="noopener">docs.databricks.com ↗</a></div></div>
+        <div class="book-card"><h4>Spider &amp; BIRD benchmarks</h4><div class="author">Academic</div><div class="why">The standard Text-to-SQL eval datasets. If you build a custom Text-to-SQL system, you\'ll be benchmarking against these.</div><div class="meta meta--free">Free · <a href="https://yale-lily.github.io/spider" target="_blank" rel="noopener">Spider ↗</a></div></div>
+        <div class="book-card"><h4>AI Engineering — applied chapters</h4><div class="author">Chip Huyen · 2024</div><div class="why">The capstone-style "wrap it all together" chapters apply to this module. Re-read after completing the course.</div><div class="meta">Paid · ~40 pp</div></div>
+      </div>
+    </section>
+
+    <section id="resume" class="resume-panel section-anchor">
+      <h2>🚀 What You Can Now Build (and Claim)</h2>
+      <h3>What you can now design end-to-end</h3>
+      <ul style="margin: 0 0 1.25rem 0.4rem; padding-left: 1.1rem;">
+        <li>Spec a governed Text-to-SQL agent: schema injection, views-only access, SELECT-only validation, approval gate, Delta results, run registry.</li>
+        <li>Apply Unity Catalog (or Snowflake / BigQuery equivalents) for permissions, masking, lineage — the governance layer that makes everything else defensible.</li>
+        <li>Brief a security review on every guardrail layer and why it\'s there.</li>
+        <li>Map the same pattern to other "AI on enterprise data" use cases — internal search, anomaly detection, automated reporting.</li>
+      </ul>
+      <h3>Resume bullets you can defend</h3>
+      <div class="resume-bullet" data-copy-text="Designed and deployed governed Text-to-SQL agentic systems on Databricks with Unity Catalog — schema-aware generation, views-only access pattern, SELECT-only + cost-threshold validation, HITL approval gates for non-trivial queries, results written to Delta with full run registry for audit.">Designed and deployed governed Text-to-SQL agentic systems on Databricks with Unity Catalog — schema-aware generation, views-only access pattern, SELECT-only + cost-threshold validation, HITL approval gates for non-trivial queries, results written to Delta with full run registry for audit.<button class="copy-btn">Copy</button></div>
+      <div class="resume-bullet" data-copy-text="Composed every guardrail and pattern from the agentic stack — schema-first structured outputs, RAG for query context, MCP-shaped tool contracts, validation layers, HITL gates, audit-grade observability — into a single capstone agent suitable for enterprise compliance review.">Composed every guardrail and pattern from the agentic stack — schema-first structured outputs, RAG for query context, MCP-shaped tool contracts, validation layers, HITL gates, audit-grade observability — into a single capstone agent suitable for enterprise compliance review.<button class="copy-btn">Copy</button></div>
+      <h3>Likely interview / investor / hiring questions</h3>
+      <div class="qa"><div class="q">Q: How do you stop a Text-to-SQL agent from running a destructive query?</div><div class="a">A: Four layers. (1) Credential scope — the agent\'s DB credential has SELECT-only privilege at the warehouse level. INSERT/UPDATE/DELETE/DROP are impossible regardless of what SQL is generated. (2) View-only access — agent can\'t name base tables; they\'re not in its allowlist. (3) Parser validation — every generated query is parsed; non-SELECT or non-allowlisted-views are rejected before dispatch. (4) Cost / size limits — dry-run estimates bytes scanned; queries above threshold gate to a human. Together: defense in depth. No single layer is sufficient; no single layer needs to be.</div></div>
+      <div class="qa"><div class="q">Q: A user asks "how many enterprise customers churned last quarter?" — walk through what your system does.</div><div class="a">A: 1) Inject schema for the relevant views into the prompt: v_customers with column metadata. 2) LLM generates structured output: { sql, explanation, confidence }. 3) Parser validates: SELECT-only ✓, views-only ✓, LIMIT injected. 4) Dry-run estimates 200MB — under threshold, auto-approve. 5) Execute on Databricks SQL Serverless. 6) Write the result to a Delta table; insert a row into the run registry with user, question, sql, timings, cost. 7) Return a link to the result for the user to open in their notebook or BI tool.</div></div>
+    </section>
+
+    <section id="test" class="section-anchor"><div id="test-container"></div></section>
+    <nav class="module-nav" id="module-nav"></nav>
+  </main>
+
+  <footer class="site-footer"><div>🎓 Full Stack Agentic AI Engineering · Module 12 (Capstone) · <a href="../index.html">Course home</a></div></footer>
+
+  <script src="../assets/js/progress.js"></script>
+  <script src="../assets/js/test-engine.js"></script>
+  <script src="../assets/js/nav.js"></script>
+  <script src="../assets/js/ui.js"></script>
+  <script src="../assets/js/walkthroughs.js"></script>
+  <script src="../assets/data/syllabus.js"></script>
+  <script>
+    renderSiteHeader('#site-header', '../');
+
+    window.WALKTHROUGHS['m12-textsql'] = {
+      frames: [
+        { title: '1. User asks a business question', body: 'A non-technical user types: "How many enterprise customers churned last quarter, by region?" They don\'t know SQL. They shouldn\'t need to.' },
+        { title: '2. Schema injected into prompt', body: 'The system loads the relevant view metadata: prod.sales.v_customers with columns (customer_id, tier, signup_date, churn_date, region) and descriptions. Only views the user is permitted to see are included — Unity Catalog enforces this.' },
+        { title: '3. LLM generates structured SQL', body: 'The LLM produces output as schema-validated JSON: { sql: "SELECT region, count(*) FROM v_customers WHERE tier=\'enterprise\' AND churn_date BETWEEN ...", explanation: "...", confidence: 0.91 }. Free-form text never crosses the system boundary.' },
+        { title: '4. Validation layer', body: 'The SQL is parsed. Is it SELECT-only? ✓. Does it reference only allowlisted views (v_*)? ✓. Has LIMIT? Injected at 1000 if not. Dry-run estimates 180MB scanned — under the 1GB auto-approve threshold.' },
+        { title: '5. Approval gate (when needed)', body: 'For this query: auto-approved (under cost threshold, known query pattern). For higher-cost or novel queries: routes to a data steward via Slack with Approve/Edit/Reject — same HITL pattern from Module 1, applied at the SQL layer.' },
+        { title: '6. Execute → Delta + run registry', body: 'Query runs on Databricks SQL. Results write to a Delta table. Run registry row inserted: user, question, sql, approver (system or human), execution_ms, bytes_scanned, result_delta_path, ts. User gets a link to the result. Compliance has the full audit trail. The capstone pattern complete.' }
+      ]
+    };
+
+    const TEST = {
+      moduleId: 'module-12',
+      mcqs: [
+        { q: 'Why use views (not base tables) for an AI agent\'s SQL access?', options: ['Views are faster', 'Views filter rows, mask columns, and enforce read-only — limits exfiltration architecturally', 'Views save storage', 'Views skip indexing'], correct: 1, explain: 'Views are the architectural defense: the agent can\'t touch what isn\'t in the view. Hope is not a strategy; allowlists are.' },
+        { q: 'Schema-aware SQL generation means:', options: ['Using a larger LLM', 'Injecting the relevant view\'s columns, types, and descriptions into the prompt so the LLM generates correct SQL', 'Caching SQL output', 'Skipping the LLM'], correct: 1, explain: 'Schema injection grounds the LLM in your actual data layout. Without it, the LLM guesses column names — and gets them wrong.' },
+        { q: 'Generated SQL must be validated for:', options: ['Spelling', 'SELECT-only, allowlisted views/tables, LIMIT injected', 'Whitespace', 'Lowercase'], correct: 1, explain: 'Three validation rules: SELECT-only (no writes), allowlisted scope (no base tables / other schemas), LIMIT enforcement (no runaway scans).' },
+        { q: 'Why dry-run a query before executing?', options: ['It\'s required', 'Estimate bytes scanned — block expensive queries before they run', 'Dry-run is faster', 'It checks syntax'], correct: 1, explain: 'Dry-run gives a cost estimate. Block above threshold or route to HITL. Stops runaway queries before they incur the bill.' },
+        { q: 'When should you gate a Text-to-SQL query through HITL?', options: ['Every query', 'When the query is over a cost threshold, writes to data, or is a novel pattern', 'Only on errors', 'Never — fully automate'], correct: 1, explain: 'Same Module 1 rule: gate the irreversible (writes), gate the costly, gate the novel. Auto-approve the routine; sample-audit the rest.' },
+        { q: 'What goes in a "run registry"?', options: ['Just SQL', 'User, question, SQL, approver, timings, bytes scanned, result Delta path, timestamp', 'Just timestamps', 'Just result data'], correct: 1, explain: 'Run registry = full audit trail. Searchable. Every dimension you\'d ever need to investigate a question, dispute, or compliance request.' },
+        { q: 'Unity Catalog\'s three-level namespace is:', options: ['region.zone.cluster', 'catalog.schema.table', 'project.dataset.table', 'org.team.member'], correct: 1, explain: 'UC: catalog (typically env) → schema (database) → table/view. Permissions, lineage, and masking attach at any level.' },
+        { q: 'For a 10TB warehouse, what limit do you put on agent-generated SELECTs?', options: ['No limit', 'LIMIT injected (e.g., 1000) plus a dry-run cost threshold gating expensive queries', 'LIMIT 10', 'Always scan full table'], correct: 1, explain: 'LIMIT injection for default scan caps; dry-run cost threshold catches "SELECT * with no WHERE." Both layers.' },
+        { q: 'Where do query results go?', options: ['Returned inline to the user', 'Written to a Delta table (or equivalent); return a link, not the data', 'Discarded', 'Emailed in CSV'], correct: 1, explain: 'Delta result table = reusable, version-controlled, auditable. Return a link; keeps PII contained, supports re-use of the same query, makes compliance review feasible.' },
+        { q: 'Does this pattern only work on Databricks?', options: ['Yes — Databricks-specific', 'No — same pattern applies to Snowflake, BigQuery, Redshift with equivalent governance primitives (masking, lineage, scoped credentials)', 'Only on AWS', 'Only on open-source warehouses'], correct: 1, explain: 'The pattern is warehouse-agnostic. Unity Catalog has equivalents in Snowflake (Horizon, dynamic data masking) and BigQuery (policy tags, column-level security). What changes is the implementation; the architecture transfers.' }
+      ],
+      scenarios: [
+        { q: 'A CFO wants to give their analyst team natural-language access to financial data. Walk through the system you\'d propose.', modelAnswer: 'Architecture:\n\n1. Define data views. For each business domain (revenue, costs, customers, products), curate v_* views in Unity Catalog. Views: filter rows by what the analyst tier should see; mask sensitive columns (anything with personal identifiers, comp data); pre-compute common joins.\n\n2. Schema injection. The agent\'s prompt always includes the relevant view definitions for the question domain — column names, types, descriptions. Router decides which domain.\n\n3. SQL generation. LLM (Claude or GPT-4 class) with structured output schema: { sql, explanation, confidence, used_views[] }. Few-shot examples in the prompt covering common finance questions.\n\n4. Validation. Parse generated SQL. SELECT-only. Views must be in the configured allowlist. LIMIT injected.\n\n5. Cost check. Dry-run via Databricks SQL. Estimated bytes < 1GB → auto-approve. > 1GB → gate to a data steward for approval. > 10GB → reject and ask user to refine.\n\n6. Execute. Run on Databricks SQL Serverless under a dedicated agent identity (SELECT-only at the warehouse permission layer).\n\n7. Results. Write to a Delta result table. Return a link the analyst opens in their BI tool (Databricks SQL editor, Tableau, etc.).\n\n8. Audit. Every run registers: user, question, sql, approver, timings, bytes, result path. Searchable by CFO at any time. Quarterly review of usage patterns and emerging questions to add to view catalog.\n\n9. Eval. 50 representative finance questions with known correct answers. Run weekly to detect drift.\n\nGovernance posture: even if the LLM hallucinates a wild query (it will, occasionally), the multi-layer defense ensures no damage — wrong SQL fails validation, expensive SQL fails cost check, writes are impossible. The system is safe by architecture, not by hoping the LLM is well-behaved.\n\nTotal effort: 3-4 weeks for v1 (1 week each on views curation, agent build, governance integration, eval/observability). Pays back in analyst hours saved within a quarter.' },
+        { q: 'A security reviewer asks: "if an attacker prompt-injected your Text-to-SQL agent, what damage could they do?" 60-second answer.', modelAnswer: '"Specifically: very little, because we have defense in depth.\n\nIf injection convinces the LLM to generate destructive SQL — say DROP TABLE — the SQL is parsed at the validation layer and rejected. Non-SELECT statements never reach the database.\n\nIf injection convinces the LLM to query base tables instead of allowlisted views — the parser rejects them. Base tables aren\'t in the agent\'s allowlist; can\'t be referenced even if the LLM tries.\n\nIf injection convinces the LLM to scan the whole warehouse — dry-run cost check catches it. Above-threshold queries gate to a human for approval. Never runs silently.\n\nAnd at the bottom: the agent\'s database credential itself has SELECT-only privilege on only the v_* views. Even if every validation layer failed and a destructive query reached the warehouse, the credential couldn\'t execute it. The DB rejects it. That\'s the architectural floor — no amount of injection can bypass the credential\'s permissions.\n\nDamage upper bound: an attacker could potentially get the agent to run a slightly-different SELECT against a view they\'re allowed to query. They see the same data they could have seen by asking the agent the right question normally. No exfiltration beyond view scope. No writes. No expensive scans. No DDL.\n\nThe key point: we don\'t rely on the LLM being un-injectable. We assume it will be injected. The system is safe even when the LLM is fooled. That\'s defense in depth, and it\'s the only model that holds up in real production."' },
+        { q: 'You\'re reflecting on the whole course. A founder friend asks "what would you tell yourself if you were starting today?" Distill what you learned.', modelAnswer: 'Six things, in priority order:\n\n1. Default to single ReAct, not multi-agent. Most "AI products" I see overbuild because multi-agent sounds impressive. One well-designed agent with the right tools beats five agents arguing every time.\n\n2. Force schema-validated structured outputs everywhere. Free-form text breaks production. The single biggest reliability gain costs about a day of engineering across the codebase.\n\n3. Gate the irreversible, audit the reversible. HITL is a scalpel, not a hammer. Place it precisely on consequential actions and your throughput stays high while your blast radius stays small.\n\n4. Build eval discipline before you scale. Without a labeled dataset and an LLM-as-judge calibrated to humans, you\'re shipping vibes. With them, you catch regressions before customers do. ~1 engineering week investment, lifetime payback.\n\n5. Defense in depth on guardrails — don\'t trust any single layer. Input validation, schema validation, allowlists, HITL, monitoring. Each catches what the others missed. Skip a layer, attackers find the gap.\n\n6. Use the right tool. n8n for business glue. LangGraph for stateful agents. MCP for tool standardization. Databricks/Snowflake/BigQuery for governed data access. Don\'t reach for code when no-code fits, or no-code when complexity demands code.\n\nMeta-lesson: agentic AI is mostly engineering discipline + judgment, not prompting cleverness. The teams winning aren\'t the ones with the cleverest prompts — they\'re the ones with eval discipline, observability, and the willingness to say "no, that\'s over-engineered" three times a quarter.\n\nNow go build something. You have the framework.' }
+      ]
+    };
+
+    renderTest(TEST, document.getElementById('test-container'));
+    renderModuleNav('module-12', '#module-nav');
+    initWalkthroughs();
+  </script>
+</body>
+</html>

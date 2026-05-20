@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module 4 — LangGraph (State + Memory) · Agentic AI Course</title>
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/module.css">
+  <link rel="stylesheet" href="../assets/css/print.css">
+</head>
+<body data-module-id="module-04">
+
+  <header class="site-header" id="site-header"></header>
+
+  <section class="module-hero">
+    <div class="module-hero__inner">
+      <div class="num">Module 4</div>
+      <h1>LangGraph — State, Memory & HITL</h1>
+      <p class="subtitle">When a chain isn't enough. The state-machine framework powering most production agentic workflows in 2026.</p>
+      <div class="meta">
+        <span>⏱ ~80 min (incl. videos)</span>
+        <span>·</span>
+        <span>3 curated videos + 1 walkthrough</span>
+        <span>·</span>
+        <span>10 MCQs + 3 scenarios · ≥80% to unlock M5</span>
+      </div>
+    </div>
+  </section>
+
+  <main class="container">
+
+    <h2 id="why">Why this matters</h2>
+    <p>
+      LCEL chains are great until you need <em>state</em> — variables that persist across steps, branching logic, memory of past turns, pauses for human approval. That's LangGraph. It's the orchestration layer above LangChain, built for stateful workflows. As of 2026 it's the default substrate for production agents at most LangChain-adopting shops.
+    </p>
+
+    <div class="objectives">
+      <h4>You'll be able to</h4>
+      <ul>
+        <li>Decide when a chain isn't enough and you need a graph</li>
+        <li>Define a state schema and pick the right reducers</li>
+        <li>Use checkpoints to pause, resume, replay, and fork agent runs</li>
+        <li>Wire HITL gates that interrupt mid-graph and resume on approval</li>
+        <li>Distinguish short-term thread memory from long-term cross-thread memory</li>
+        <li>Deploy a graph as a service with persistence</li>
+      </ul>
+    </div>
+
+    <div class="toc">
+      <h4>Table of contents</h4>
+      <ol>
+        <li><a href="#why-graphs">Why graphs (and not chains)</a></li>
+        <li><a href="#state">State schema &amp; reducers</a></li>
+        <li><a href="#branching">Branching, checkpoints &amp; replay</a></li>
+        <li><a href="#hitl">Human-in-the-loop interrupts</a></li>
+        <li><a href="#memory">Memory: short vs long term</a></li>
+        <li><a href="#deploy">Deployment patterns</a></li>
+        <li><a href="#books">Books &amp; deeper reading</a></li>
+        <li><a href="#resume">Founder skills + resume panel</a></li>
+        <li><a href="#test">Module test</a></li>
+      </ol>
+    </div>
+
+    <h2 id="why-graphs" class="section-anchor">1. Why graphs (and not chains)</h2>
+    <p>
+      A <em>chain</em> is linear: A → B → C. A <em>graph</em> has nodes (steps) and edges (transitions), and edges can be conditional or cyclic. ReAct (Module 2) is literally a cyclic graph. So is any agent that retries, loops, branches, or waits for a human.
+    </p>
+    <p>You need a graph when any of these is true:</p>
+    <ul>
+      <li><strong>Conditional routing.</strong> "If the LLM said X, go to node A; otherwise B."</li>
+      <li><strong>Loops.</strong> ReAct cycles. Reflection loops.</li>
+      <li><strong>State persistence.</strong> You need to pause execution and resume later (e.g., for HITL).</li>
+      <li><strong>Concurrent paths.</strong> Two workers running in parallel, then converging.</li>
+    </ul>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 700 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Chain vs graph">
+        <defs><marker id="m4-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#3D5AFE"/></marker></defs>
+        <text x="120" y="30" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#1A1A1A" font-weight="700">Chain (linear)</text>
+        <rect x="20" y="70" width="60" height="36" rx="6" fill="#EDF0FF" stroke="#3D5AFE"/><text x="50" y="92" text-anchor="middle" font-size="11">A</text>
+        <line x1="80" y1="88" x2="105" y2="88" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#m4-arr)"/>
+        <rect x="110" y="70" width="60" height="36" rx="6" fill="#EDF0FF" stroke="#3D5AFE"/><text x="140" y="92" text-anchor="middle" font-size="11">B</text>
+        <line x1="170" y1="88" x2="195" y2="88" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#m4-arr)"/>
+        <rect x="200" y="70" width="60" height="36" rx="6" fill="#EDF0FF" stroke="#3D5AFE"/><text x="230" y="92" text-anchor="middle" font-size="11">C</text>
+        <text x="140" y="150" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#4A4A4A">No state. No loops.</text>
+        <text x="140" y="166" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#4A4A4A">Fine for simple pipelines.</text>
+
+        <text x="500" y="30" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#1A1A1A" font-weight="700">Graph (stateful, branching)</text>
+        <circle cx="400" cy="90" r="20" fill="#EDF0FF" stroke="#3D5AFE"/><text x="400" y="94" text-anchor="middle" font-size="11">A</text>
+        <circle cx="500" cy="60" r="20" fill="#EDF0FF" stroke="#3D5AFE"/><text x="500" y="64" text-anchor="middle" font-size="11">B</text>
+        <circle cx="500" cy="120" r="20" fill="#EDF0FF" stroke="#3D5AFE"/><text x="500" y="124" text-anchor="middle" font-size="11">C</text>
+        <circle cx="600" cy="90" r="20" fill="#EDF0FF" stroke="#3D5AFE"/><text x="600" y="94" text-anchor="middle" font-size="11">D</text>
+        <line x1="418" y1="80" x2="482" y2="68" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#m4-arr)"/>
+        <line x1="418" y1="100" x2="482" y2="112" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#m4-arr)"/>
+        <line x1="518" y1="68" x2="582" y2="80" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#m4-arr)"/>
+        <line x1="518" y1="112" x2="582" y2="100" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#m4-arr)"/>
+        <path d="M 600 110 Q 600 170 400 170 Q 380 170 380 90" stroke="#B85C00" stroke-width="1.2" stroke-dasharray="4 3" fill="none" marker-end="url(#m4-arr)"/>
+        <text x="500" y="200" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#4A4A4A">Conditional routing, loops, parallel paths, pause/resume.</text>
+      </svg>
+      <figcaption>Chain vs. graph. The moment your design needs an arrow that loops back or branches, you've outgrown chains.</figcaption>
+    </figure>
+
+    <h2 id="state" class="section-anchor">2. State schema &amp; reducers</h2>
+    <p>
+      In LangGraph, <strong>State</strong> is the data that flows through the graph. You define its shape (a TypedDict or Pydantic model) up front. Every node reads State and returns updates.
+    </p>
+    <pre><code>from typing import TypedDict, Annotated
+from operator import add
+
+class AgentState(TypedDict):
+    messages: Annotated[list, add]   # reducer: append
+    refund_proposal: dict | None      # reducer: replace (default)
+    iterations: int</code></pre>
+    <p>
+      A <strong>reducer</strong> tells LangGraph how to merge a node's output into existing state. The default replaces the field. <code>add</code> appends to a list. You can write custom reducers (e.g., union sets, max-of). Reducers are why graph state behaves correctly under branching and concurrent updates.
+    </p>
+
+    <h2 id="branching" class="section-anchor">3. Branching, checkpoints &amp; replay</h2>
+    <p>
+      <strong>Checkpoints</strong> are snapshots of State after each node. They unlock four superpowers:
+    </p>
+    <ul>
+      <li><strong>Pause / resume.</strong> Stop the graph mid-execution; resume later from the last checkpoint.</li>
+      <li><strong>Replay.</strong> Re-run from any checkpoint with the same inputs — perfect for debugging.</li>
+      <li><strong>Fork.</strong> Branch from a checkpoint with different inputs — A/B test prompts against the same prior state.</li>
+      <li><strong>Time travel.</strong> Step backward through checkpoints to see exactly where things went wrong.</li>
+    </ul>
+    <p>
+      A checkpointer is a backend (in-memory for dev, Postgres or Redis for production). It writes a checkpoint after every node. Cost is one DB write per step — usually negligible.
+    </p>
+
+    <figure class="video-embed">
+      <div class="video-embed__frame">
+        <iframe src="https://www.youtube.com/embed/q70GGEHNWgw"
+                title="LangGraph Intro — Human-in-the-Loop: Replaying and Forking AI Agent State"
+                loading="lazy" allowfullscreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+      </div>
+      <figcaption>
+        <span class="video-embed__meta">Watch · LangChain official · Builder essentials</span>
+        <strong>LangGraph: Replaying and Forking AI Agent State</strong>
+        LangChain's official walkthrough of checkpoints, replay, and fork. The features that distinguish a debuggable production agent from a black box. Watch with a notebook open.
+        <br><a class="video-embed__yt-link" href="https://www.youtube.com/watch?v=q70GGEHNWgw" target="_blank" rel="noopener">Open on YouTube ↗</a>
+      </figcaption>
+    </figure>
+
+    <h2 id="hitl" class="section-anchor">4. Human-in-the-loop interrupts</h2>
+    <p>
+      LangGraph's killer feature for safety-conscious founders: <strong>interrupt</strong>. A node can call <code>interrupt(payload)</code> mid-execution. The graph pauses, persists state, surfaces the payload to a human. When the human responds (via your UI / API), the graph resumes from exactly where it stopped.
+    </p>
+    <pre><code>def propose_refund(state: AgentState):
+    proposal = build_proposal(state)
+    decision = interrupt({"propose": proposal, "options": ["approve", "edit", "reject"]})
+    if decision == "approve":
+        return {"refund_proposal": proposal, "status": "approved"}
+    elif decision["action"] == "edit":
+        return {"refund_proposal": decision["edited_proposal"]}
+    else:
+        return {"status": "rejected"}</code></pre>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 700 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LangGraph interrupt flow">
+        <defs><marker id="m4-arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#3D5AFE"/></marker></defs>
+        <rect x="20" y="80" width="120" height="50" rx="6" fill="#EDF0FF" stroke="#3D5AFE"/><text x="80" y="100" text-anchor="middle" font-size="11" font-weight="700">Node: propose</text><text x="80" y="118" text-anchor="middle" font-size="10" fill="#4A4A4A">builds proposal</text>
+        <line x1="140" y1="105" x2="170" y2="105" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#m4-arr2)"/>
+        <polygon points="200,80 280,105 200,130 175,105" fill="#FFF1E0" stroke="#B85C00"/><text x="220" y="103" text-anchor="middle" font-size="11" font-weight="700">interrupt()</text><text x="220" y="118" text-anchor="middle" font-size="10">checkpoint saved</text>
+        <text x="220" y="60" text-anchor="middle" font-size="10" fill="#7A7A7A">graph paused · state persisted</text>
+        <line x1="280" y1="105" x2="320" y2="105" stroke="#B85C00" stroke-width="1.5" stroke-dasharray="3 3" marker-end="url(#m4-arr2)"/>
+        <rect x="330" y="80" width="130" height="50" rx="6" fill="#FFFFFF" stroke="#1A1A1A"/><text x="395" y="100" text-anchor="middle" font-size="11">👤 Human reviews</text><text x="395" y="118" text-anchor="middle" font-size="10" fill="#4A4A4A">in your UI</text>
+        <line x1="460" y1="105" x2="495" y2="105" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#m4-arr2)"/>
+        <rect x="500" y="80" width="180" height="50" rx="6" fill="#E6F4E6" stroke="#2E7D32"/><text x="590" y="100" text-anchor="middle" font-size="11" font-weight="700">resume(decision)</text><text x="590" y="118" text-anchor="middle" font-size="10" fill="#4A4A4A">graph continues from checkpoint</text>
+        <text x="350" y="170" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#4A4A4A" font-style="italic">Resume can be seconds, minutes, or days later. State persists.</text>
+      </svg>
+      <figcaption>The interrupt pattern. The graph pauses at the gate, checkpoint persists, human reviews on their own time, decision resumes the graph. This is what makes async HITL feasible.</figcaption>
+    </figure>
+
+    <h2 id="memory" class="section-anchor">5. Memory: short vs long term</h2>
+    <table class="compare-table">
+      <thead><tr><th></th><th>Short-term</th><th>Long-term</th></tr></thead>
+      <tbody>
+        <tr><td>Scope</td><td>Single thread / conversation</td><td>Across threads / users</td></tr>
+        <tr><td>Implementation</td><td>State / checkpoints</td><td>External store (vector DB, KG, SQL)</td></tr>
+        <tr><td>Example</td><td>"What did the user say 3 messages ago"</td><td>"User's product preferences over months"</td></tr>
+        <tr><td>Capacity</td><td>Bounded by context window</td><td>Effectively unlimited</td></tr>
+      </tbody>
+    </table>
+    <p>
+      LangGraph has a <code>Store</code> abstraction for long-term memory. Read it at the start of a turn, write to it at the end. Common pattern: vector store keyed by user_id for semantic recall, plus relational rows for facts.
+    </p>
+
+    <h2 id="deploy" class="section-anchor">6. Deployment patterns</h2>
+    <ul>
+      <li><strong>LangGraph Platform.</strong> Managed deployment with persistence, threads, HITL endpoints, monitoring. The easiest path; useful even if you self-host eventually.</li>
+      <li><strong>Self-host.</strong> Run as a server (FastAPI / Express) with Postgres as the checkpointer.</li>
+      <li><strong>Embedded.</strong> Inside another app, in-memory checkpointer. Use only for short-lived sessions.</li>
+    </ul>
+
+    <div class="walkthrough" data-walkthrough-id="m4-langgraph">
+      <div class="walkthrough__header">
+        <h4 class="walkthrough__title">▷ Step through: state flowing through a refund graph</h4>
+        <span class="walkthrough__subtitle">6 steps · with an interrupt</span>
+      </div>
+      <div class="walkthrough__viewport">
+        <svg viewBox="0 0 700 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LangGraph walkthrough">
+          <defs><marker id="wt-m4-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#3D5AFE"/></marker></defs>
+          <g data-wf="1,2,3,4,5,6"><rect x="20" y="30" width="660" height="34" rx="6" fill="#F3F0E8" stroke="#7A7A7A"/><text x="32" y="50" font-family="SF Mono, monospace" font-size="11" fill="#1A1A1A">state = { messages: [...], refund_proposal: null, iterations: 0 }</text></g>
+          <g data-wf="1,2,3,4,5,6"><rect x="20" y="80" width="110" height="42" rx="6" fill="#EDF0FF" stroke="#3D5AFE"/><text x="75" y="98" text-anchor="middle" font-size="10" font-weight="700">classify</text><text x="75" y="112" text-anchor="middle" font-size="9">"refund req"</text></g>
+          <g data-wf="2,3,4,5,6"><line x1="130" y1="101" x2="155" y2="101" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#wt-m4-arr)"/><rect x="160" y="80" width="110" height="42" rx="6" fill="#EDF0FF" stroke="#3D5AFE"/><text x="215" y="98" text-anchor="middle" font-size="10" font-weight="700">lookup_order</text><text x="215" y="112" text-anchor="middle" font-size="9">tool call</text></g>
+          <g data-wf="3,4,5,6"><line x1="270" y1="101" x2="295" y2="101" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#wt-m4-arr)"/><rect x="300" y="80" width="110" height="42" rx="6" fill="#EDF0FF" stroke="#3D5AFE"/><text x="355" y="98" text-anchor="middle" font-size="10" font-weight="700">propose</text><text x="355" y="112" text-anchor="middle" font-size="9">build refund</text></g>
+          <g data-wf="4,5,6"><line x1="410" y1="101" x2="435" y2="101" stroke="#B85C00" stroke-width="1.5" stroke-dasharray="3 3" marker-end="url(#wt-m4-arr)"/><polygon points="440,75 510,101 440,127 415,101" fill="#FFF1E0" stroke="#B85C00"/><text x="465" y="100" text-anchor="middle" font-size="10" font-weight="700">interrupt</text><text x="465" y="114" text-anchor="middle" font-size="9">PAUSED</text></g>
+          <g data-wf="5,6"><line x1="510" y1="101" x2="535" y2="101" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#wt-m4-arr)"/><rect x="540" y="80" width="130" height="42" rx="6" fill="#FFFFFF" stroke="#1A1A1A"/><text x="605" y="98" text-anchor="middle" font-size="10" font-weight="700">👤 approve</text><text x="605" y="112" text-anchor="middle" font-size="9">resume(approve)</text></g>
+          <g data-wf="6"><rect x="280" y="170" width="160" height="42" rx="6" fill="#E6F4E6" stroke="#2E7D32" stroke-width="2"/><text x="360" y="188" text-anchor="middle" font-size="10" font-weight="700">execute_refund</text><text x="360" y="202" text-anchor="middle" font-size="9">→ Delta + audit log</text></g>
+          <g data-wf="6"><line x1="360" y1="125" x2="360" y2="165" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#wt-m4-arr)"/></g>
+        </svg>
+      </div>
+      <div class="walkthrough__caption"><h4 class="walkthrough__step-title"></h4><p class="walkthrough__step-body"></p></div>
+      <div class="walkthrough__controls"><button class="walkthrough__nav-btn" data-action="prev">←</button><span class="walkthrough__step-indicator"></span><button class="walkthrough__nav-btn" data-action="next">→</button><button class="walkthrough__play-btn" data-action="play">▶ Play</button></div>
+    </div>
+
+    <figure class="video-embed">
+      <div class="video-embed__frame">
+        <iframe src="https://www.youtube.com/embed/6t7YJcEFUIY"
+                title="LangGraph interrupt: Making it easier to build human-in-the-loop agents"
+                loading="lazy" allowfullscreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+      </div>
+      <figcaption>
+        <span class="video-embed__meta">Watch · LangChain official · 2026</span>
+        <strong>LangGraph interrupt: Easier human-in-the-loop agents</strong>
+        Deep-dive on the interrupt() primitive. How LangGraph distinguishes a pause that survives server restarts from a pause that doesn't. Critical viewing if you're putting HITL anywhere near production.
+        <br><a class="video-embed__yt-link" href="https://www.youtube.com/watch?v=6t7YJcEFUIY" target="_blank" rel="noopener">Open on YouTube ↗</a>
+      </figcaption>
+    </figure>
+
+    <figure class="video-embed">
+      <div class="video-embed__frame">
+        <iframe src="https://www.youtube.com/embed/4F8wvpb8JkI"
+                title="Human-in-the-Loop AI Agents in LangGraph | 2026 Walkthrough"
+                loading="lazy" allowfullscreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+      </div>
+      <figcaption>
+        <span class="video-embed__meta">Watch · 2026 walkthrough</span>
+        <strong>Human-in-the-Loop AI Agents in LangGraph — 2026 Walkthrough</strong>
+        A fresh end-to-end build of a HITL workflow. Useful for your engineering team as a reference implementation; useful for you as the founder for seeing what production HITL actually looks like in code.
+        <br><a class="video-embed__yt-link" href="https://www.youtube.com/watch?v=4F8wvpb8JkI" target="_blank" rel="noopener">Open on YouTube ↗</a>
+      </figcaption>
+    </figure>
+
+    <section class="books-section section-anchor" id="books">
+      <h2>📚 Books &amp; Deeper Reading</h2>
+      <div class="books-grid">
+        <div class="book-card"><h4>LangGraph official docs</h4><div class="author">LangChain Inc.</div><div class="why">The "State, Reducers, Checkpoints, Interrupts" sections are mandatory reading. ~2 hours.</div><div class="meta meta--free">Free · <a href="https://langchain-ai.github.io/langgraph/" target="_blank" rel="noopener">langchain-ai.github.io/langgraph ↗</a></div></div>
+        <div class="book-card"><h4>LangChain Academy: Introduction to LangGraph</h4><div class="author">Free course</div><div class="why">Official free course. Send your engineers here as Day 1 of their LangGraph onboarding.</div><div class="meta meta--free">Free · <a href="https://academy.langchain.com/" target="_blank" rel="noopener">academy.langchain.com ↗</a></div></div>
+        <div class="book-card"><h4>AI Engineering — Ch. 7 "Stateful Agents"</h4><div class="author">Chip Huyen · O'Reilly · 2024</div><div class="why">Pattern-level view of stateful agent design, framework-agnostic. Read after the LangGraph docs to lift your thinking back up.</div><div class="meta">Paid · ~35 pp</div></div>
+        <div class="book-card"><h4>Anthropic — Building Effective Agents (revisit)</h4><div class="author">Anthropic Engineering</div><div class="why">Their "Workflow vs. Agent" distinction maps cleanly to "chain vs graph." Re-read with this lens.</div><div class="meta meta--free">Free · <a href="https://www.anthropic.com/engineering/building-effective-agents" target="_blank" rel="noopener">anthropic.com ↗</a></div></div>
+      </div>
+    </section>
+
+    <section id="resume" class="resume-panel section-anchor">
+      <h2>🚀 What You Can Now Build (and Claim)</h2>
+      <h3>What you can now design end-to-end</h3>
+      <ul style="margin: 0 0 1.25rem 0.4rem; padding-left: 1.1rem;">
+        <li>Decide chain vs. graph in one minute based on whether the design needs state, loops, branching, or pauses.</li>
+        <li>Spec a State schema with explicit reducers — preventing the classic "state corruption under concurrent updates" bug.</li>
+        <li>Wire HITL interrupts that pause graphs and resume cleanly — minutes, hours, or days later.</li>
+        <li>Demand checkpointing for any customer-facing graph (replay = debuggability = compliance).</li>
+        <li>Separate short-term thread memory from long-term cross-user memory architecturally.</li>
+      </ul>
+      <h3>Resume bullets you can defend</h3>
+      <div class="resume-bullet" data-copy-text="Designed stateful agentic workflows in LangGraph, including state schemas with custom reducers, conditional routing, and Postgres-backed checkpointing — enabling pause, resume, replay, and fork operations critical for debugging production incidents.">Designed stateful agentic workflows in LangGraph, including state schemas with custom reducers, conditional routing, and Postgres-backed checkpointing — enabling pause, resume, replay, and fork operations critical for debugging production incidents.<button class="copy-btn">Copy</button></div>
+      <div class="resume-bullet" data-copy-text="Implemented Human-in-the-Loop approval gates using LangGraph interrupts, supporting asynchronous approval workflows (graph pauses, persists state, resumes when human acts — minutes to days later).">Implemented Human-in-the-Loop approval gates using LangGraph interrupts, supporting asynchronous approval workflows (graph pauses, persists state, resumes when human acts — minutes to days later).<button class="copy-btn">Copy</button></div>
+      <div class="resume-bullet" data-copy-text="Designed memory architecture distinguishing short-term thread-scoped state (checkpoints) from long-term cross-thread memory (vector store + relational facts), preventing context-window overflow and enabling cross-session personalization.">Designed memory architecture distinguishing short-term thread-scoped state (checkpoints) from long-term cross-thread memory (vector store + relational facts), preventing context-window overflow and enabling cross-session personalization.<button class="copy-btn">Copy</button></div>
+      <h3>Likely interview / investor / hiring questions</h3>
+      <div class="qa"><div class="q">Q: When would you reach for LangGraph instead of plain LCEL?</div><div class="a">A: As soon as I need any of: stateful variables across steps, conditional routing, loops (including ReAct), parallel branches that converge, or a pause/resume mechanism for HITL. LCEL is fine for stateless linear pipelines. For everything else LangGraph saves you re-implementing state machines yourself.</div></div>
+      <div class="qa"><div class="q">Q: What's a reducer and why does it matter?</div><div class="a">A: A reducer is the merge function applied when a node returns updates to State. Default replaces; <code>add</code> appends. They matter because branching and parallel nodes both write to State — without reducers you get last-write-wins bugs or silent overwrites. Specifying the right reducer per field is a 5-minute design step that prevents 5 hours of debugging.</div></div>
+      <div class="qa"><div class="q">Q: How does LangGraph interrupt differ from "just check a database flag in a loop"?</div><div class="a">A: Interrupt persists exact state and gives you replay/fork for free. A polling-loop pattern loses execution context, can't safely replay, and doesn't scale across server restarts. Interrupt is also natively integrated with checkpointing, so the pause is durable — survives crashes, deployments, and weekend gaps. This is the difference between a demo and a production HITL system.</div></div>
+    </section>
+
+    <section id="test" class="section-anchor"><div id="test-container"></div></section>
+    <nav class="module-nav" id="module-nav"></nav>
+  </main>
+
+  <footer class="site-footer"><div>Full Stack Agentic AI Engineering · Module 4 · <a href="../index.html">Course home</a></div></footer>
+
+  <script src="../assets/js/progress.js"></script>
+  <script src="../assets/js/test-engine.js"></script>
+  <script src="../assets/js/nav.js"></script>
+  <script src="../assets/js/ui.js"></script>
+  <script src="../assets/js/walkthroughs.js"></script>
+  <script src="../assets/data/syllabus.js"></script>
+  <script>
+    renderSiteHeader('#site-header', '../');
+
+    window.WALKTHROUGHS['m4-langgraph'] = {
+      frames: [
+        { title: '1. Initial state', body: 'A refund request enters the graph. Initial State: messages list with the customer\'s request, refund_proposal null, iterations 0. This typed State will flow through every node.' },
+        { title: '2. classify node', body: 'First node reads State, decides the request type ("refund request"), and routes accordingly. State now contains the classification. Checkpoint written automatically.' },
+        { title: '3. lookup_order node', body: 'Tool call to fetch order details. Result appended to messages via the `add` reducer — that\'s why we annotated messages with `Annotated[list, add]`. Without it, the new message would overwrite prior ones.' },
+        { title: '4. propose node + interrupt', body: 'The agent builds a refund proposal. It then calls interrupt({proposal, options}). State is checkpointed. The graph pauses — the server can be redeployed, the human can take 3 days, doesn\'t matter.' },
+        { title: '5. Human approves', body: 'The human reviews the proposal in your UI, clicks approve. Your backend calls graph.resume(decision="approve"). Execution picks up from the exact checkpoint with the human\'s decision injected into State.' },
+        { title: '6. execute_refund (final node)', body: 'The actual side effect runs: refund issued, Delta row written, audit log entry created. Full trace from initial request to final action is reconstructable from checkpoints — that\'s your debug and compliance trail.' }
+      ]
+    };
+
+    const TEST = {
+      moduleId: 'module-04',
+      mcqs: [
+        { q: 'When should you reach for LangGraph instead of LCEL?', options: ['Always — LangGraph is newer', 'When you need state, branching, loops, or pause/resume', 'When you need fewer dependencies', 'When latency must be under 100ms'], correct: 1, explain: 'LangGraph adds value precisely when chains aren\'t enough: stateful variables, conditional routing, loops (ReAct), HITL pauses, parallel branches.' },
+        { q: 'What does a "reducer" do in LangGraph state?', options: ['Reduces token count', 'Defines how to merge a node\'s output into existing State (replace, append, custom)', 'Compresses old messages', 'Disables checkpointing'], correct: 1, explain: 'Reducers tell LangGraph how to combine new updates with current State. Default replaces; `add` appends. Critical for correct behavior under branching/parallel updates.' },
+        { q: 'A checkpoint is:', options: ['A unit test', 'A snapshot of State after each node — enables pause, resume, replay, fork', 'A model evaluation point', 'A cost metric'], correct: 1, explain: 'Checkpoints are State snapshots saved automatically. They unlock replay (debug), fork (A/B test), pause/resume (HITL), and time travel.' },
+        { q: 'What does interrupt() do in a LangGraph node?', options: ['Throws an exception', 'Pauses the graph, persists State, surfaces a payload to a human, resumes when the human responds', 'Kills the agent', 'Switches to a different LLM'], correct: 1, explain: 'interrupt() is the HITL primitive — pause + persist + surface + resume. The graph can be paused for days; State is durable.' },
+        { q: 'Short-term memory in LangGraph maps to:', options: ['Vector store', 'State / checkpoints (single thread)', 'A knowledge graph', 'A relational DB'], correct: 1, explain: 'Short-term memory = thread-scoped State + checkpoints. Long-term memory = external stores (vector DB, KG, SQL) shared across threads.' },
+        { q: 'Which scenario MOST needs a checkpointer in production?', options: ['A one-shot text summarization', 'A multi-step agent with HITL approval gates', 'A simple classifier', 'A static prompt template'], correct: 1, explain: 'HITL requires persistent state — the graph might pause for hours/days. Without a checkpointer, the State evaporates when the server restarts.' },
+        { q: 'You have a node that runs two LLM calls in parallel and both write to State.messages. What\'s the danger without a reducer?', options: ['Slower performance', 'Last-write-wins overwrites the first call\'s message', 'Higher cost', 'Checkpoint fails'], correct: 1, explain: 'Parallel writes without a reducer overwrite each other. Use `Annotated[list, add]` so both writes append, preserving both messages.' },
+        { q: 'Long-term memory in LangGraph is best implemented via:', options: ['Keeping everything in messages forever (will overflow context)', 'External store (Store abstraction) — vector DB for semantic recall, SQL for facts', 'Disabling checkpoints', 'Larger context windows alone'], correct: 1, explain: 'Long-term memory belongs in external stores. LangGraph\'s Store abstraction provides keys like user_id; read on turn start, write on turn end. Context window can\'t hold months of history.' },
+        { q: 'Replay (re-running from a checkpoint) is most useful for:', options: ['Speeding up production', 'Debugging — reproduce exactly what happened on a failed run', 'Reducing token cost', 'Cache warming'], correct: 1, explain: 'Replay reconstructs the agent\'s exact reasoning chain from a checkpoint. Essential for "why did the agent do X?" investigations.' },
+        { q: 'Which deployment pattern is appropriate for a customer-facing graph with multi-day HITL gaps?', options: ['In-memory checkpointer', 'LangGraph Platform or self-hosted with Postgres checkpointer', 'No checkpointer; rely on logs', 'Edge functions only'], correct: 1, explain: 'In-memory loses state on restart. Multi-day HITL gaps need durable persistence — LangGraph Platform (managed) or self-host with Postgres.' }
+      ],
+      scenarios: [
+        { q: 'Your team is building a 6-step employee onboarding agent: collect info, verify ID, request equipment, schedule training, send welcome, monitor first-week feedback. Steps 2 (verify ID) and 6 (monitor feedback) need humans. Design the graph architecture.', modelAnswer: 'Graph (not chain) — state, two HITL gates, and multi-day pauses.\n\nState schema:\n• employee: { name, email, role, start_date }\n• verification: { status, reviewer_id, notes }\n• equipment_request: { items[], status }\n• training: { scheduled_slot }\n• feedback: { collected_at, summary }\n• status: enum\n\nNodes: collect_info → verify_id (interrupts to HR for ID check) → request_equipment → schedule_training → send_welcome → wait_first_week → monitor_feedback (interrupts to manager for review).\n\nCheckpointing: Postgres-backed. The verify_id pause might last hours; the wait_first_week is literally 7+ days. State must be durable across redeploys.\n\nReducers: equipment_request.items uses append (request can grow). status uses replace.\n\nMemory: Long-term store keyed by employee_id — survives the graph, available later for analytics, retrospectives.\n\nReplay/fork: leave on. When an onboarding goes wrong (it will), replay reconstructs the decision path; fork lets you test alternate flows for the next onboard.' },
+        { q: 'Engineers report "state is getting corrupted under load" — when 200 simultaneous agent runs hit the same node, some Lose data. What\'s likely wrong and how do you brief the fix?', modelAnswer: 'Almost certainly missing or wrong reducers, possibly combined with shared State across threads.\n\nLikely problems:\n\n1. Missing reducer on list/dict fields. Two concurrent writes to State.messages without `Annotated[list, add]` mean last-write-wins. Fix: explicit reducers on every collection field.\n\n2. Reducer correctness under parallel branches. If two branches write conflicting updates to a scalar field with the default (replace) reducer, you get one of the two non-deterministically. Fix: design State so independent branches write to different fields, or use a custom merge reducer.\n\n3. Threads mixed up. If thread_id isn\'t propagated correctly, concurrent users may share a graph instance. Fix: every invocation passes config={"thread_id": user_session_id}; checkpointer keys by thread_id.\n\n4. In-memory checkpointer in production. Loses state on restart and doesn\'t coordinate across instances. Fix: Postgres or Redis checkpointer.\n\nBrief to engineers: "Audit State schema for missing reducers on collections. Verify thread_id propagation end-to-end. Confirm checkpointer is durable (Postgres). Write a stress test with 500 concurrent threads and assert State isolation."' },
+        { q: 'A board member asks "if you\'re using AI agents that touch customer money, how do we prove what happened to an auditor?" You have 60 seconds. What do you say?', modelAnswer: '"Every agent run produces a checkpoint at each step — a typed snapshot of state. So for any specific transaction, I can pull the full chain: what the user said, what the agent reasoned, which tools it called, what results came back, where a human approved, who that human was, and what the final action was. It\'s a complete decision trace, persistent in Postgres, queryable by transaction ID or timestamp.\n\nOn top of that, we have replay — given the same starting state, we can re-run the agent to reproduce its behavior exactly. That\'s how we debug incidents and how we prove non-tampering: same input + same prompt version = same output.\n\nFor an auditor we provide: (1) the decision trace per transaction, (2) the prompt version registry (M10 covers this), (3) the HITL approval log with reviewer identity, (4) the data retention policy that keeps these for as long as the regulator requires.\n\nThis is what LangGraph\'s checkpointing buys us. Without it, the audit story is "trust us, the LLM does the right thing" — which doesn\'t hold up in front of any regulator I\'ve met."' }
+      ]
+    };
+
+    renderTest(TEST, document.getElementById('test-container'));
+    renderModuleNav('module-04', '#module-nav');
+    initWalkthroughs();
+  </script>
+</body>
+</html>

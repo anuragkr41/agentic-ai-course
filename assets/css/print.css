@@ -1,0 +1,23 @@
+@media print {
+  .site-header,
+  .module-nav,
+  .test__actions,
+  .resume-panel .copy-btn,
+  .btn {
+    display: none !important;
+  }
+  body { background: white; color: black; font-size: 11pt; line-height: 1.45; }
+  .container, .container-wide { max-width: none; padding: 0; }
+  .module-hero { padding: 0 0 0.75rem; border-bottom: 1px solid #999; }
+  .card, .callout, .diagram, .resume-panel, .test, .objectives {
+    box-shadow: none;
+    border: 1px solid #999;
+    page-break-inside: avoid;
+    background: white !important;
+  }
+  h1, h2, h3 { page-break-after: avoid; color: black; }
+  pre { white-space: pre-wrap; word-wrap: break-word; border: 1px solid #ccc; }
+  a { color: black; text-decoration: underline; }
+  a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 0.8em; color: #555; }
+  .test__opt--correct, .test__opt--wrong { background: white !important; }
+}

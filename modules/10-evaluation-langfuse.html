@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module 10 — Evaluation & Observability (Langfuse) · Agentic AI Course</title>
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/module.css">
+  <link rel="stylesheet" href="../assets/css/print.css">
+</head>
+<body data-module-id="module-10">
+
+  <header class="site-header" id="site-header"></header>
+
+  <section class="module-hero">
+    <div class="module-hero__inner">
+      <div class="num">Module 10</div>
+      <h1>Evaluation &amp; Observability — Langfuse</h1>
+      <p class="subtitle">If you can't measure it, you can't ship it. Traces, evaluations, experiments, cost &amp; latency — the production discipline for agentic systems.</p>
+      <div class="meta"><span>⏱ ~75 min · 3 videos + 1 walkthrough · 10 MCQs + 3 scenarios · ≥80% to unlock M11</span></div>
+    </div>
+  </section>
+
+  <main class="container">
+
+    <h2 id="why">Why this matters</h2>
+    <p>
+      The teams shipping serious agents in 2026 are not the teams with the cleverest prompts — they're the teams with the best <strong>evaluation and observability discipline</strong>. Without it, you ship a feature, the LLM provider updates a model, and you find out three weeks later that quality dropped 12% because a customer complained on Twitter. With it, you catch the regression before deploy. Langfuse is open-source, self-hostable, and used by 19 of the Fortune 50 — pick it or its commercial peers (LangSmith, Helicone, Phoenix) but pick one.
+    </p>
+
+    <div class="objectives">
+      <h4>You'll be able to</h4>
+      <ul>
+        <li>List what to evaluate (groundedness, citation coverage, schema validity, task success, cost, latency)</li>
+        <li>Implement LLM-as-judge evaluators without making them too lenient</li>
+        <li>Read a Langfuse trace tree and find the failing span in 30 seconds</li>
+        <li>Track prompt versions and run experiments (A/B different prompts on the same dataset)</li>
+        <li>Set cost &amp; latency budgets and enforce them</li>
+        <li>Brief your team: "we don't ship a prompt change without a regression check"</li>
+      </ul>
+    </div>
+
+    <div class="toc">
+      <h4>Table of contents</h4>
+      <ol>
+        <li><a href="#what">What to evaluate</a></li>
+        <li><a href="#judges">Judge-model patterns (LLM-as-judge)</a></li>
+        <li><a href="#langfuse">Langfuse: traces, spans, runs</a></li>
+        <li><a href="#versions">Prompt &amp; version tracking</a></li>
+        <li><a href="#experiments">Experiments &amp; A/B testing prompts</a></li>
+        <li><a href="#cost">Cost &amp; latency monitoring</a></li>
+        <li><a href="#books">Books &amp; deeper reading</a></li>
+        <li><a href="#resume">Founder skills + resume panel</a></li>
+        <li><a href="#test">Module test</a></li>
+      </ol>
+    </div>
+
+    <h2 id="what" class="section-anchor">1. What to evaluate</h2>
+    <p>Six signals, in priority order:</p>
+    <ul>
+      <li><strong>Task success rate.</strong> Did the agent achieve the goal? Binary or graded; measured on a labeled set.</li>
+      <li><strong>Schema validity.</strong> Did the output match the spec? Easy to automate; ship-blocker if &lt;99%.</li>
+      <li><strong>Groundedness.</strong> (Module 5.) For RAG, is every claim supported by retrieved evidence?</li>
+      <li><strong>Citation coverage.</strong> % of claims that cite.</li>
+      <li><strong>Cost per task.</strong> $ spent. Track p50 and p99.</li>
+      <li><strong>Latency.</strong> Time-to-first-token, time-to-completion. Track p50 and p99.</li>
+    </ul>
+    <p>Plus domain-specific signals: refund accuracy, classification F1, retrieval recall@k, etc. Start narrow — 4–6 signals total. More is paralysis.</p>
+
+    <h2 id="judges" class="section-anchor">2. Judge-model patterns</h2>
+    <p>Many signals (groundedness, faithfulness, helpfulness) need a model to judge an output. The pattern: a separate LLM call grades the agent's output against criteria.</p>
+    <pre><code>judge_prompt = """
+Given the question, the retrieved context, and the answer, score:
+- groundedness (0-1): every factual claim is supported by context
+- citation_coverage (0-1): every claim cites a chunk
+- helpfulness (0-1): the answer actually addresses the question
+
+Return JSON: { groundedness, citation_coverage, helpfulness, reasoning }
+"""</code></pre>
+    <p>Three rules for honest LLM-as-judge:</p>
+    <ul>
+      <li><strong>Use a different (often stronger) model.</strong> Don't have GPT-4o grade GPT-4o; it's lenient on itself. Use Claude or Gemini as judge for GPT, or vice versa.</li>
+      <li><strong>Calibrate against humans.</strong> Have humans label 50 examples. Run the judge. Measure agreement. If judge agrees &lt;85% with humans, the prompt needs work.</li>
+      <li><strong>Force reasoning.</strong> Judge must include its reasoning. Lets you spot when the judge is sloppy and improve the prompt.</li>
+    </ul>
+
+    <figure class="video-embed">
+      <div class="video-embed__frame">
+        <iframe src="https://www.youtube.com/embed/JOGMn5nqCSM"
+                title="LLM-as-a-Judge Evaluation for Dataset Experiments in Langfuse"
+                loading="lazy" allowfullscreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+      </div>
+      <figcaption>
+        <span class="video-embed__meta">Watch · Langfuse · Eval canonical source</span>
+        <strong>LLM-as-a-Judge Evaluation for Dataset Experiments in Langfuse</strong>
+        Practical walkthrough of building LLM-judge evaluators that don't lie to you. Includes the calibration step most teams skip.
+        <br><a class="video-embed__yt-link" href="https://www.youtube.com/watch?v=JOGMn5nqCSM" target="_blank" rel="noopener">Open on YouTube ↗</a>
+      </figcaption>
+    </figure>
+
+    <h2 id="langfuse" class="section-anchor">3. Langfuse: traces, spans, runs</h2>
+    <p>Three primitives:</p>
+    <ul>
+      <li><strong>Trace.</strong> One end-to-end user interaction. Has metadata (user_id, session, etc.).</li>
+      <li><strong>Span.</strong> A unit of work inside a trace. Each LLM call, retrieval, tool call, sub-chain is a span. Spans nest.</li>
+      <li><strong>Score.</strong> A measurement attached to a trace or span — could be an automatic eval result, a user thumbs-up, a manual review verdict.</li>
+    </ul>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 700 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Langfuse trace tree">
+        <rect x="20" y="20" width="660" height="40" rx="6" fill="#EDF0FF" stroke="#3D5AFE" stroke-width="2"/>
+        <text x="32" y="40" font-size="10" fill="#3D5AFE">TRACE · refund_resolution</text>
+        <text x="32" y="55" font-family="SF Mono, monospace" font-size="9">trace_id: t-9281 · user: u-4821 · duration: 4.2s · cost: $0.018 · score: pass</text>
+        <rect x="60" y="80" width="600" height="32" rx="5" fill="#FFFFFF" stroke="#1A1A1A"/>
+        <text x="72" y="100" font-size="10">SPAN · retrieve_policy (RAG)</text>
+        <text x="640" y="100" text-anchor="end" font-size="9" fill="#7A7A7A">0.8s</text>
+        <rect x="100" y="120" width="560" height="32" rx="5" fill="#FFFFFF" stroke="#1A1A1A"/>
+        <text x="112" y="140" font-size="10">SPAN · LLM_call (judge groundedness)</text>
+        <text x="640" y="140" text-anchor="end" font-size="9" fill="#7A7A7A">1.4s · $0.008</text>
+        <rect x="100" y="160" width="560" height="32" rx="5" fill="#FFFFFF" stroke="#1A1A1A"/>
+        <text x="112" y="180" font-size="10">SPAN · tool_call (propose_refund)</text>
+        <text x="640" y="180" text-anchor="end" font-size="9" fill="#7A7A7A">0.1s</text>
+        <rect x="60" y="200" width="600" height="32" rx="5" fill="#E6F4E6" stroke="#2E7D32"/>
+        <text x="72" y="220" font-size="10" fill="#2E7D32">SPAN · HITL_approval (resumed after 3.5h)</text>
+        <text x="640" y="220" text-anchor="end" font-size="9" fill="#7A7A7A">3.5h wait · approved by jane@</text>
+      </svg>
+      <figcaption>A Langfuse trace tree. Each row is a span. Costs, latency, and outcomes roll up to the trace. Click any span to see input/output verbatim.</figcaption>
+    </figure>
+
+    <figure class="video-embed">
+      <div class="video-embed__frame">
+        <iframe src="https://www.youtube.com/embed/2E8iTvGo9Hs"
+                title="10 min Walkthrough of Langfuse"
+                loading="lazy" allowfullscreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+      </div>
+      <figcaption>
+        <span class="video-embed__meta">Watch · Langfuse · Quick tour</span>
+        <strong>10-minute Walkthrough of Langfuse</strong>
+        Marc (Langfuse CEO) tours the product. The fastest way to understand traces, scores, prompt management, datasets, and experiments.
+        <br><a class="video-embed__yt-link" href="https://www.youtube.com/watch?v=2E8iTvGo9Hs" target="_blank" rel="noopener">Open on YouTube ↗</a>
+      </figcaption>
+    </figure>
+
+    <h2 id="versions" class="section-anchor">4. Prompt &amp; version tracking</h2>
+    <p>
+      Every prompt has a version. Every trace records which prompt version it used. When quality drops, you know exactly which prompt change to roll back.
+    </p>
+    <p>Langfuse (and peers) provides a prompt registry: store prompts in the platform, reference by name + version in code, deploy a new version as a config change rather than a code release. This is huge for tight iteration loops.</p>
+
+    <h2 id="experiments" class="section-anchor">5. Experiments &amp; A/B testing prompts</h2>
+    <p>The discipline: <strong>no prompt change ships without a regression check</strong>.</p>
+    <p>How:</p>
+    <ol>
+      <li>Build a <strong>dataset</strong> — 50–500 representative inputs with expected outputs.</li>
+      <li>Run the <strong>current prompt</strong> over the dataset. Save scores.</li>
+      <li>Run the <strong>candidate prompt</strong> over the same dataset.</li>
+      <li>Compare per-input. Which got worse? Why? Reject if regressions outweigh gains.</li>
+      <li>Promote the winning prompt to production. Old prompt remains in the registry (rollback in seconds).</li>
+    </ol>
+
+    <h2 id="cost" class="section-anchor">6. Cost &amp; latency monitoring</h2>
+    <ul>
+      <li><strong>Cost per task.</strong> p50 (median) and p99 (tail). p99 is where the surprises hide — a few runaway agents can blow your budget.</li>
+      <li><strong>Latency.</strong> Time to first token (UX-critical for chat) and time to completion.</li>
+      <li><strong>Budgets and alerts.</strong> Hard cap per task. Alert on p99 spikes. Daily report by feature.</li>
+      <li><strong>Cost attribution.</strong> Tag traces by feature, customer, environment. When the bill spikes you can pin down where.</li>
+    </ul>
+
+    <figure class="video-embed">
+      <div class="video-embed__frame">
+        <iframe src="https://www.youtube.com/embed/h5hqelg0_wc"
+                title="RAG Observability and Evaluations with Langfuse"
+                loading="lazy" allowfullscreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+      </div>
+      <figcaption>
+        <span class="video-embed__meta">Watch · Langfuse</span>
+        <strong>RAG Observability and Evaluations with Langfuse</strong>
+        Specifically tracing RAG-based applications, plus how to evaluate retrieval and generation quality separately — critical for pinning down whether your problem is the retriever or the LLM.
+        <br><a class="video-embed__yt-link" href="https://www.youtube.com/watch?v=h5hqelg0_wc" target="_blank" rel="noopener">Open on YouTube ↗</a>
+      </figcaption>
+    </figure>
+
+    <div class="walkthrough" data-walkthrough-id="m10-eval">
+      <div class="walkthrough__header"><h4 class="walkthrough__title">▷ Step through: catching a regression with eval discipline</h4><span class="walkthrough__subtitle">6 steps · prompt change → eval → rollback</span></div>
+      <div class="walkthrough__viewport">
+        <svg viewBox="0 0 700 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Eval walkthrough">
+          <g data-wf="1,2,3,4,5,6"><rect x="20" y="20" width="660" height="36" rx="6" fill="#F3F0E8" stroke="#7A7A7A"/><text x="32" y="44" font-size="11">Engineer proposes: "let's tweak the system prompt to be more concise."</text></g>
+          <g data-wf="2,3,4,5,6"><rect x="20" y="70" width="320" height="42" rx="6" fill="#EDF0FF" stroke="#3D5AFE"/><text x="180" y="88" text-anchor="middle" font-size="10" font-weight="700">RUN EVAL DATASET (200 cases)</text><text x="180" y="103" text-anchor="middle" font-size="9">current prompt v3 · scores saved</text></g>
+          <g data-wf="3,4,5,6"><rect x="360" y="70" width="320" height="42" rx="6" fill="#EDF0FF" stroke="#3D5AFE"/><text x="520" y="88" text-anchor="middle" font-size="10" font-weight="700">RUN SAME DATASET</text><text x="520" y="103" text-anchor="middle" font-size="9">candidate prompt v4 · scores saved</text></g>
+          <g data-wf="4,5,6"><rect x="20" y="130" width="660" height="60" rx="6" fill="#FFF1E0" stroke="#B85C00"/><text x="32" y="150" font-size="10" fill="#B85C00" font-weight="700">COMPARE RESULTS</text><text x="32" y="166" font-family="SF Mono, monospace" font-size="10">task_success: 92% → 89% (-3%)  ·  citation_coverage: 96% → 81% (-15%)</text><text x="32" y="180" font-family="SF Mono, monospace" font-size="10">cost: $0.018 → $0.012 (-33%)  ·  latency: 4.2s → 3.1s (-26%)</text></g>
+          <g data-wf="5,6"><rect x="20" y="205" width="320" height="40" rx="6" fill="#FAE7E9" stroke="#B23A48"/><text x="180" y="225" text-anchor="middle" font-size="10" font-weight="700">REJECTED — citation regression too large</text><text x="180" y="238" text-anchor="middle" font-size="9">15-point drop unacceptable; cost savings don\'t justify</text></g>
+          <g data-wf="6"><rect x="360" y="205" width="320" height="40" rx="6" fill="#E6F4E6" stroke="#2E7D32"/><text x="520" y="225" text-anchor="middle" font-size="10" font-weight="700">CURRENT PROMPT v3 STAYS LIVE</text><text x="520" y="238" text-anchor="middle" font-size="9">engineer iterates on v4 to preserve citations</text></g>
+          <g data-wf="6"><text x="350" y="265" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#7A7A7A" font-style="italic">Without eval discipline: v4 ships, customers complain 3 weeks later, mystery debugging.</text></g>
+        </svg>
+      </div>
+      <div class="walkthrough__caption"><h4 class="walkthrough__step-title"></h4><p class="walkthrough__step-body"></p></div>
+      <div class="walkthrough__controls"><button class="walkthrough__nav-btn" data-action="prev">←</button><span class="walkthrough__step-indicator"></span><button class="walkthrough__nav-btn" data-action="next">→</button><button class="walkthrough__play-btn" data-action="play">▶ Play</button></div>
+    </div>
+
+    <section class="books-section section-anchor" id="books">
+      <h2>📚 Books &amp; Deeper Reading</h2>
+      <div class="books-grid">
+        <div class="book-card"><h4>Langfuse docs</h4><div class="author">Langfuse</div><div class="why">Start with "Tracing" → "Evaluation" → "Datasets &amp; Experiments." ~2 hours.</div><div class="meta meta--free">Free · <a href="https://langfuse.com/docs" target="_blank" rel="noopener">langfuse.com/docs ↗</a></div></div>
+        <div class="book-card"><h4>Eugene Yan — "Evaluating LLMs"</h4><div class="author">eugeneyan.com</div><div class="why">The best free essay on evaluating LLM apps. Read end to end. Updated regularly.</div><div class="meta meta--free">Free · <a href="https://eugeneyan.com/writing/llm-patterns/" target="_blank" rel="noopener">eugeneyan.com ↗</a></div></div>
+        <div class="book-card"><h4>AI Engineering — Ch. 5 "Evaluation"</h4><div class="author">Chip Huyen · 2024</div><div class="why">The systems view: how to design evaluation for LLM apps as an ongoing discipline, not a one-time task.</div><div class="meta">Paid · ~40 pp</div></div>
+        <div class="book-card"><h4>RAGAS framework</h4><div class="author">Open source</div><div class="why">Canonical eval library. Implements groundedness, faithfulness, answer relevancy, context precision. Integrate with Langfuse for the full picture.</div><div class="meta meta--free">Free · <a href="https://github.com/explodinggradients/ragas" target="_blank" rel="noopener">github.com/explodinggradients/ragas ↗</a></div></div>
+      </div>
+    </section>
+
+    <section id="resume" class="resume-panel section-anchor">
+      <h2>🚀 What You Can Now Build (and Claim)</h2>
+      <h3>What you can now design end-to-end</h3>
+      <ul style="margin: 0 0 1.25rem 0.4rem; padding-left: 1.1rem;">
+        <li>Instrument every agent with Langfuse traces — every span tracked, every cost attributed, every score recorded.</li>
+        <li>Build a labeled eval dataset (50–500 cases) and run it against every prompt/model change.</li>
+        <li>Implement calibrated LLM-as-judge evaluators (agreement with humans &gt;85%).</li>
+        <li>Establish "no prompt change ships without regression check" as a team norm.</li>
+        <li>Read a trace tree and pinpoint the failing span in 30 seconds.</li>
+      </ul>
+      <h3>Resume bullets you can defend</h3>
+      <div class="resume-bullet" data-copy-text="Built end-to-end LLM observability with Langfuse — instrumented traces / spans / scores for every agent run, with cost and latency budgets, prompt-version tracking, and continuous evaluation against a labeled regression dataset.">Built end-to-end LLM observability with Langfuse — instrumented traces / spans / scores for every agent run, with cost and latency budgets, prompt-version tracking, and continuous evaluation against a labeled regression dataset.<button class="copy-btn">Copy</button></div>
+      <div class="resume-bullet" data-copy-text="Established the team norm "no prompt or model change ships without regression check" — implemented as an automated experiment workflow (current vs candidate over labeled dataset, gated on aggregate and per-slice score deltas).">Established the team norm "no prompt or model change ships without regression check" — implemented as an automated experiment workflow (current vs candidate over labeled dataset, gated on aggregate and per-slice score deltas).<button class="copy-btn">Copy</button></div>
+      <h3>Likely interview / investor / hiring questions</h3>
+      <div class="qa"><div class="q">Q: How do you know your agent is getting better, not worse, over time?</div><div class="a">A: Labeled eval dataset (200+ cases) run against every prompt/model change. Six signals tracked: task success, schema validity, groundedness, citation coverage, cost, latency. LLM-as-judge for subjective signals, calibrated against humans on 50 cases. Regression check is automated; failing changes don\'t ship. Quarterly: update the dataset with new failure modes captured in production. Without this, "is it better" is vibes.</div></div>
+      <div class="qa"><div class="q">Q: An LLM provider updates a model. What do you do?</div><div class="a">A: Three things in sequence. (1) Run the eval dataset against the new model — pin down quality delta on every signal. (2) Run a shadow deploy: route 5% of production traffic to new model, compare scores live. (3) If both pass, gradual rollout: 25% → 50% → 100% with rollback if any score regresses. Without traces and eval, this is impossible — you\'d find out from customer complaints, which is the wrong feedback loop.</div></div>
+    </section>
+
+    <section id="test" class="section-anchor"><div id="test-container"></div></section>
+    <nav class="module-nav" id="module-nav"></nav>
+  </main>
+
+  <footer class="site-footer"><div>Full Stack Agentic AI Engineering · Module 10 · <a href="../index.html">Course home</a></div></footer>
+
+  <script src="../assets/js/progress.js"></script>
+  <script src="../assets/js/test-engine.js"></script>
+  <script src="../assets/js/nav.js"></script>
+  <script src="../assets/js/ui.js"></script>
+  <script src="../assets/js/walkthroughs.js"></script>
+  <script src="../assets/data/syllabus.js"></script>
+  <script>
+    renderSiteHeader('#site-header', '../');
+
+    window.WALKTHROUGHS['m10-eval'] = {
+      frames: [
+        { title: '1. Proposed prompt change', body: 'An engineer says "the agent\'s answers are too long. Let\'s tweak the system prompt to be more concise." Sounds reasonable. Without eval discipline, we\'d ship and hope.' },
+        { title: '2. Run eval on current prompt (v3)', body: 'We run our labeled eval dataset (200 cases) against the current prompt v3. Scores recorded: task_success 92%, citation_coverage 96%, cost $0.018, latency 4.2s. This is our baseline.' },
+        { title: '3. Run eval on candidate prompt (v4)', body: 'Same dataset, candidate prompt v4 (the "more concise" version). Scores recorded.' },
+        { title: '4. Compare', body: 'Task success: 92% → 89% (-3%). Citation coverage: 96% → 81% (-15%). Cost: -33%. Latency: -26%. The new prompt is cheaper and faster — but citation coverage dropped 15 points. The model is dropping citations to be concise.' },
+        { title: '5. Decision: reject', body: 'A 15-point regression in citation coverage is unacceptable — that\'s the signal that prevents hallucination. Cheaper and faster doesn\'t justify it. We reject v4 and tell the engineer: iterate on a version that preserves citation rate.' },
+        { title: '6. Current stays; without eval, we\'d be debugging in 3 weeks', body: 'V3 stays live. Engineer iterates on v4b that requires citations in the prompt. Without this discipline, v4 would have shipped, hallucination would have risen, customers would have complained, and we\'d be doing forensics in the worst possible way. Eval saved us a quarter.' }
+      ]
+    };
+
+    const TEST = {
+      moduleId: 'module-10',
+      mcqs: [
+        { q: 'Why use a DIFFERENT LLM as judge, not the same one as the agent?', options: ['Cost', 'LLMs are lenient on themselves; cross-model judging avoids that bias', 'Latency', 'Required by the spec'], correct: 1, explain: 'GPT-4o judging GPT-4o is biased. Use Claude or Gemini as judge for GPT, or vice versa. Calibrate against humans either way.' },
+        { q: 'In Langfuse, what is a "span"?', options: ['A user session', 'A unit of work inside a trace (an LLM call, retrieval, tool call) — spans nest', 'A model evaluation', 'A latency metric'], correct: 1, explain: 'Trace = end-to-end interaction. Span = a step inside. Spans nest, forming a tree. Each span has input/output/duration/cost.' },
+        { q: 'When should you ship a prompt change?', options: ['Whenever it looks better', 'After running it against a labeled eval dataset and confirming no regression on key signals', 'After the engineer convinces the team', 'Whenever cost is lower'], correct: 1, explain: 'No prompt change ships without regression check. Lower cost or latency are not enough if quality regresses.' },
+        { q: 'Which signal would you NEVER drop below 99%?', options: ['Cost optimization', 'Schema validity', 'Latency', 'Helpfulness'], correct: 1, explain: 'Schema validity is automatable and ship-blocking. <99% means downstream systems break. Hold this line.' },
+        { q: 'How do you calibrate an LLM-as-judge?', options: ['Trust it', 'Have humans label 50 cases; run the judge; measure agreement; iterate prompt until >85% agreement', 'Use a larger judge model', 'Skip calibration — judges are accurate enough'], correct: 1, explain: 'Calibration against humans is non-negotiable. Without it, the judge may be silently optimistic or pessimistic — your "scores" become noise.' },
+        { q: 'Why track p50 AND p99 for cost?', options: ['Symmetry', 'p50 = typical case; p99 = tail where runaway agents hide. The surprises live in the tail.', 'Required by Langfuse', 'Pricing optimization'], correct: 1, explain: 'p50 captures the median; p99 catches the outliers — agent loops, recursion, retries. Tail cost can blow your budget while the average looks fine.' },
+        { q: 'What\'s the value of a prompt registry?', options: ['Compresses prompts', 'Versioning + reference by name in code: deploy new prompts as config, roll back in seconds', 'Faster execution', 'Eliminates need for evaluation'], correct: 1, explain: 'Prompt registry decouples prompt iteration from code deploys. Versioned prompts + traces logging the version used = easy rollback.' },
+        { q: 'When an LLM provider updates a model, your move is:', options: ['Hope', 'Run eval dataset on new model; shadow-deploy on 5% traffic; gradual rollout with rollback if scores regress', 'Switch providers immediately', 'Wait for customer complaints'], correct: 1, explain: 'Defined process: eval-shadow-rollout-rollback. Without it, you find out via customer complaints — wrong feedback loop, weeks late.' },
+        { q: 'Which is NOT one of the six standard signals to track?', options: ['Task success', 'Schema validity', 'Model parameter count', 'Latency'], correct: 2, explain: 'Parameter count is a model attribute, not a runtime signal. Track outcomes (success, validity, groundedness, cost, latency) — not model trivia.' },
+        { q: 'How big should your eval dataset be to start?', options: ['10 cases — small is fine', '50-500 representative cases covering common scenarios + known failure modes', '10,000+ to be safe', 'No fixed size'], correct: 1, explain: '50-500 is the sweet spot — enough signal, fast to run, easy to maintain. Grow it as you encounter new failure modes in production.' }
+      ],
+      scenarios: [
+        { q: 'A board member asks "we spent $50k on Langfuse and eval infra. What does that get us that we wouldn\'t have had?" 60-second answer.', modelAnswer: '"Three things, all of which save more than $50k per year.\n\nOne: we catch regressions before customers do. Before, when an LLM provider updated their model or an engineer tweaked a prompt, quality could drop quietly. We\'d find out via customer churn 3 weeks later. Now, every change runs through the eval dataset; failing changes don\'t ship. Saves us at least one customer-escalation incident per quarter.\n\nTwo: cost attribution and control. We can pin every dollar spent to a feature, a customer, an environment. When the bill spiked last quarter — turned out one agent was looping on edge cases — we caught it the same day instead of after the bill arrived. We\'ve set hard per-task budgets; runaway agents now get stopped at the cap.\n\nThree: compliance and audit posture. Every agent run is a queryable trace. When a regulator or enterprise customer asks "show me how the agent made this decision," we have it in 30 seconds. Without traces, this is hand-wave-and-pray — and we\'d be losing enterprise deals on the security review.\n\nThe $50k is paying for predictability. The alternative — shipping AI without instrumentation — is more expensive and far more risky."' },
+        { q: 'Your team is over-evaluating: 18 different metrics, dashboards no one reads, eval runs take 40 min. How do you fix it?', modelAnswer: 'Three moves:\n\n1. Cut the metrics. Force-rank: which 5 actually drive ship decisions? Task success, schema validity, one quality metric (probably groundedness for RAG), cost p99, latency p99. Everything else is noise. Archive the others — easy to reactivate, but they shouldn\'t be on a daily dashboard.\n\n2. Build a tiered eval pipeline. Smoke tests (30 cases, 2 min) on every PR. Full regression (200 cases, 15 min) before merge to main. Comprehensive eval (1000+ cases, 1 hour) nightly with diff vs yesterday. This way the slow eval isn\'t blocking; it\'s catching long-tail issues asynchronously.\n\n3. One dashboard, one weekly review. Pick the 5 signals; one chart per. Weekly 30-min team review of trends and anomalies. If a metric never moves the conversation, drop it.\n\nMeasure what matters: are we shipping faster and is quality holding? If 18 metrics aren\'t answering that, fewer would. Eval infra is a means; the end is decisions.' },
+        { q: 'A junior engineer asks "what\'s the smallest viable eval setup for a 3-person team shipping their first agentic feature?" Walk through.', modelAnswer: 'Week 1 (the smallest viable):\n\n1. Pick one observability tool. Langfuse cloud (free tier covers small teams), LangSmith, or Phoenix. Wire it into your agent — auto-traces every LLM call. ~2 hours.\n\n2. Build a 30-case eval dataset. Get representative customer queries, write the "what should the agent answer" by hand. Save as JSON or YAML. 1 day.\n\n3. Write a script that runs the agent over the dataset and posts scores to Langfuse. Three signals: schema_valid (auto), citation_coverage (regex/parse), task_success (LLM-as-judge with Claude). 1 day.\n\n4. Run it. Establish baseline. Write the numbers in your README.\n\n5. Rule for the team: no prompt change merges without the script passing without regression. CI hook if possible; honor system if not.\n\nWeek 2-3:\n\n6. Add cost + latency monitoring (Langfuse does it free).\n\n7. Grow dataset to 100 cases as you encounter production failures.\n\n8. Add one LLM-as-judge metric (groundedness for RAG). Calibrate against 20 human labels.\n\nThat\'s it. 3-5 days of engineering. After: you\'re ahead of 90% of teams shipping AI today. Most teams skip steps 1-5 and find out the hard way.\n\nWhat NOT to do: build a 1000-case dataset Day 1 (over-investment). Stand up custom dashboards (Langfuse has them). Buy enterprise eval platforms (overkill for 3-person team). Optimize for completeness before correctness.' }
+      ]
+    };
+
+    renderTest(TEST, document.getElementById('test-container'));
+    renderModuleNav('module-10', '#module-nav');
+    initWalkthroughs();
+  </script>
+</body>
+</html>

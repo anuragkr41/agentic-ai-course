@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interview Bank · Agentic AI Course</title>
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/module.css">
+  <link rel="stylesheet" href="../assets/css/print.css">
+  <style>
+    .qa-section { margin: 1.5rem 0 2rem; }
+    .qa-section > h3 {
+      font-family: var(--font-sans);
+      font-size: 0.92rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--accent);
+      margin: 1rem 0 0.5rem;
+      padding-bottom: 0.3rem;
+      border-bottom: 1px solid var(--accent);
+      font-weight: 700;
+    }
+    .qa-card {
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1rem 1.2rem;
+      margin-bottom: 0.75rem;
+    }
+    .qa-card .q-text { font-weight: 700; color: var(--ink); margin-bottom: 0.45rem; font-size: 0.95rem; }
+    .qa-card .a-text { color: var(--ink-soft); font-size: 0.92rem; line-height: 1.6; }
+    .red-flag {
+      background: var(--danger-bg);
+      border-left: 4px solid var(--danger);
+      padding: 0.85rem 1.1rem;
+      border-radius: var(--radius-sm);
+      margin: 1rem 0 1.5rem;
+      font-size: 0.91rem;
+    }
+    .red-flag h5 {
+      margin: 0 0 0.4rem;
+      font-family: var(--font-sans);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--danger);
+      font-weight: 700;
+    }
+    .red-flag ul { margin: 0; padding-left: 1.2rem; }
+    .red-flag li { margin-bottom: 0.3rem; color: var(--ink); }
+    .topic-toc {
+      background: var(--code-bg);
+      padding: 1rem 1.25rem;
+      border-radius: var(--radius-sm);
+      margin: 1.5rem 0;
+      font-size: 0.9rem;
+      column-count: 2;
+      column-gap: 2rem;
+    }
+    .topic-toc h4 {
+      margin: 0 0 0.5rem;
+      font-family: var(--font-sans);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      letter-spacing: 0.05em;
+      column-span: all;
+    }
+    .topic-toc ul { margin: 0; padding-left: 1.2rem; }
+    .topic-toc li { margin-bottom: 0.2rem; }
+  </style>
+</head>
+<body>
+
+  <header class="site-header" id="site-header"></header>
+
+  <section class="module-hero">
+    <div class="module-hero__inner">
+      <div class="num">Interview Bank</div>
+      <h1>🎯 Interview / Investor / Hiring Questions</h1>
+      <p class="subtitle">70+ questions organized by topic. Model answers calibrated to "what someone who actually built this would say." Plus red-flag answers to avoid.</p>
+    </div>
+  </section>
+
+  <main class="container">
+
+    <div class="topic-toc">
+      <h4>Topics</h4>
+      <ul>
+        <li><a href="#foundations">Foundations (M1–M2)</a></li>
+        <li><a href="#frameworks">Frameworks (M3–M4)</a></li>
+        <li><a href="#rag">Retrieval &amp; RAG (M5)</a></li>
+        <li><a href="#kg">Knowledge Graphs &amp; GraphRAG (M6–M7)</a></li>
+        <li><a href="#mcp">MCP &amp; Tool Standardization (M8)</a></li>
+        <li><a href="#safety">Safety &amp; Guardrails (M9)</a></li>
+        <li><a href="#eval">Evaluation &amp; Observability (M10)</a></li>
+        <li><a href="#nocode">No-Code Workflows (M11)</a></li>
+        <li><a href="#sql">Governed Text-to-SQL (M12)</a></li>
+        <li><a href="#projects">Project behavioral</a></li>
+        <li><a href="#founder">Founder-specific</a></li>
+      </ul>
+    </div>
+
+    <!-- Foundations -->
+    <section class="qa-section section-anchor" id="foundations">
+      <h2>Foundations (M1–M2)</h2>
+
+      <div class="qa-card"><div class="q-text">Q: Define agentic AI in one sentence and contrast it with generative AI.</div><div class="a-text">Agentic AI is the practice of building systems where an LLM pursues a goal by reasoning, calling tools, observing results, and iterating — often with humans gating consequential actions. Generative AI <em>creates</em> content (text, images, code). Agentic AI <em>acts</em>: it uses generation as one capability inside a goal-pursuing loop. Generative AI writes the email; agentic AI also looks up the customer, applies policy, gets approval, and sends it.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: Name the five building blocks of an agent.</div><div class="a-text">Perception (intake of goal + context), Cognition (LLM-based reasoning + planning), Memory (short-term state + long-term store), Tools (callable functions/APIs/DBs), Action (actual side effects on the world). The cycle: perceive → reason → maybe consult memory → pick tool → act → observe → loop.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: When would you choose multi-agent over single-agent?</div><div class="a-text">When work decomposes cleanly into specialist roles (researcher + writer + reviewer), when parallelism materially improves latency, or when separation of concerns is required for governance. I default to single-agent and upgrade only when one of those is true. Multi-agent doubles complexity, multiplies cost, and introduces loop / deadlock failure modes. Going single-to-multi is a refactor; multi-to-single is an admission of defeat.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: What\'s the difference between ReAct and Plan-and-Execute?</div><div class="a-text">ReAct decides one step at a time and observes the result before the next decision — right when the next-step depends on what you just learned. Plan-and-Execute commits to a full plan first, then executes — better for multi-step dependent tasks where you want to show / approve the plan before doing anything. I default to ReAct unless I need an explicit plan for users/auditors, or unless parallelism is valuable.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: Where do you put HITL gates?</div><div class="a-text">Gate the irreversible, audit the reversible. Irreversible = anything that touches money, customer comms, external systems, legal artifacts. Gate with approve / edit / reject + full audit. Reversible reads run free; sample-audit ~5%. Adding HITL to every call destroys throughput; adding to nothing is unsafe. The skill is knowing where.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: How do you make an agentic system production-reliable?</div><div class="a-text">Three layers, mandatory for customer-facing: (1) Schema-validated structured outputs — no free-form JSON, no parsing surprises. (2) Retries with backoff on transient failures. (3) Multi-provider fallbacks (e.g., Claude primary, GPT secondary) when one provider has an outage. On top: traceable Runnable boundaries (LCEL) so observability is nearly free.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: Your agent is looping forever. What pattern issue is this?</div><div class="a-text">Almost certainly missing max-iteration budget on a ReAct loop. The LLM keeps picking actions that don\'t make progress — often because tool descriptions are ambiguous or the goal is ill-defined. Fix: hard cap (5–15 iterations); explicit "give up" tool the agent can call to escalate; verbatim Thought logging so you can debug why it got stuck.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: How do you brief an engineer to build an agentic feature?</div><div class="a-text">Pattern + tools + gates. Example: "Build a router → planner-executor with ReAct inside each step. Reflection on the final summary only. HITL approve/edit/reject before any write tool. Allowlist the 3 tools the agent can call. Log every Thought and tool call to Langfuse. Schema-validate every output." The brief is specific because the patterns have names.</div></div>
+
+      <div class="red-flag">
+        <h5>Red flags to avoid</h5>
+        <ul>
+          <li>"Agents are basically just chatbots" → no, distinguish agency from generation</li>
+          <li>"More agents are better" → the multi-agent trap</li>
+          <li>"We\'ll add safety later" → safety retrofits cost 4× designing it in</li>
+          <li>Naming patterns wrong (calling ReAct "reflection" or vice versa)</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Frameworks -->
+    <section class="qa-section section-anchor" id="frameworks">
+      <h2>Frameworks (M3 LangChain + M4 LangGraph)</h2>
+
+      <div class="qa-card"><div class="q-text">Q: What\'s LCEL and why does it matter?</div><div class="a-text">LCEL (LangChain Expression Language) is the composition layer — every component is a Runnable, you pipe them with <code>|</code>. <code>chain = prompt | llm | parser</code>. Why it matters: every Runnable boundary gives you streaming, batching, async, retries, and traces for free. That\'s the abstraction\'s payback.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: Why structured outputs over free-form text?</div><div class="a-text">Three reasons. (1) Downstream code stops breaking — typed fields are reliable. (2) Schema validation is a free guardrail — bad output rejected before it leaves the system. (3) Evals get automatable — you can check exact correctness, not just "did it say roughly the right thing." Single biggest reliability win, ~1 day to implement across a codebase.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: When do you reach for LangGraph instead of LCEL?</div><div class="a-text">When the design needs state, branching, loops, or pause/resume. LCEL is fine for linear pipelines. LangGraph is for stateful workflows — ReAct loops, HITL gates, parallel sub-paths, multi-day pauses with durable state. Most production agents end up as LangGraph eventually.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: What\'s a reducer in LangGraph state?</div><div class="a-text">A merge function applied when a node returns updates to State. Default replaces; <code>add</code> appends to a list; custom reducers can union sets, take max, etc. They matter because branching and parallel nodes both write to State — without reducers you get last-write-wins bugs. Specifying the right reducer per field is a 5-minute design step that prevents 5-hour debugging sessions.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: How does LangGraph interrupt() work, and how is it different from a polling loop?</div><div class="a-text">interrupt() pauses the graph mid-execution, persists State to the checkpointer, surfaces a payload to a human. When the human responds (via webhook/UI), the graph resumes from the exact checkpoint. Pause can last seconds, minutes, or days — State is durable. A polling-loop pattern loses execution context, can\'t safely replay, doesn\'t survive server restarts. Interrupt is the difference between a demo and a production HITL system.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: How do checkpoints help in production?</div><div class="a-text">Four superpowers: (1) Pause / resume — durable for hours/days. (2) Replay — re-run from a checkpoint with same inputs for debugging. (3) Fork — branch with different inputs (A/B test prompts on identical prior state). (4) Time travel — step backward to see where things went wrong. Cost: one DB write per node, usually negligible.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: When wouldn\'t you use LangChain at all?</div><div class="a-text">When the task is a single LLM call with no retrieval, no tools, no chaining — abstraction is overhead. When the team is on Go/Rust/Java only. When dependency minimalism matters more than convenience. Otherwise — for anything with retrieval, multiple tools, structured outputs, retries, fallbacks — the abstraction earns its keep.</div></div>
+
+      <div class="red-flag">
+        <h5>Red flags to avoid</h5>
+        <ul>
+          <li>Conflating LangChain and LangGraph (they\'re complementary, different jobs)</li>
+          <li>"In-memory checkpointer is fine for production" (it isn\'t)</li>
+          <li>Skipping reducers and being surprised when State corrupts under load</li>
+          <li>Free-form text outputs in a production pipeline</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- RAG -->
+    <section class="qa-section section-anchor" id="rag">
+      <h2>Retrieval &amp; RAG (M5)</h2>
+
+      <div class="qa-card"><div class="q-text">Q: How is "agentic RAG" different from "RAG"?</div><div class="a-text">Agentic RAG adds intelligence to retrieval: the agent rewrites the query, picks among strategies (single-shot / multi-query / step-back / HyDE / skip), reranks results, and verifies groundedness before returning. Traditional RAG: embed, retrieve top-k, prompt, hope. Agentic RAG: the agent decides how to retrieve, then evaluates whether the retrieval was good enough.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: Your RAG retrieval is bad. What\'s the first thing you check?</div><div class="a-text">Chunking. Always. Try three chunk sizes (500, 1000, 1500 tokens) and measure recall@k on a labeled set. The #1 cause of weak RAG is wrong chunk size — splits across semantic boundaries, or too small for context. Second check: hybrid (vector + BM25), typically +15-20 points. Third: reranker on top-50. Only then look at embedder or model.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: How do you prevent hallucination?</div><div class="a-text">Three layers. (1) Evidence-first schema — every claim must cite a chunk; no citation = the model must say "I don\'t have that information." (2) Post-generation groundedness check (LLM-as-judge) — is every claim supported? Retry or refuse if not. (3) Continuous eval on a labeled set with the four signals (recall, groundedness, citation coverage, faithfulness). Drops confident-wrong outputs ~80%.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: When is reranking worth the cost?</div><div class="a-text">Almost always, on non-trivial corpora. One extra API call (~$0.001), typical +15-20 point answer-quality lift. The exception is when top-5 recall is already near-perfect (95%+) — measure before adding. If 95%+, skip; otherwise rerank.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: What are the four eval signals for RAG and why?</div><div class="a-text">Retrieval recall@k (did we find the right chunks?), groundedness (does each claim trace to evidence?), citation coverage (% of claims with citations), faithfulness (does any claim contradict the evidence?). The first three score the upside; faithfulness catches the dangerous downside. Track all four weekly; act on any &gt;5% drop.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: A user asks a vague messy question. How does the agent handle it?</div><div class="a-text">Query rewrite first. "ugh my order last week is broken" becomes "Return or warranty claim for product purchased ~7 days ago — process?" The rewrite normalizes vocabulary, extracts intent. Then hybrid retrieve + rerank on the rewritten query. The agent decides; the user doesn\'t have to phrase questions perfectly.</div></div>
+
+      <div class="red-flag">
+        <h5>Red flags to avoid</h5>
+        <ul>
+          <li>"Just use a bigger model to fix retrieval" — model isn\'t the bottleneck</li>
+          <li>Free-form answers without citations</li>
+          <li>"We don\'t need eval for RAG, we test by trying questions" — that\'s vibes</li>
+          <li>Adding rerank without measuring whether it helps</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- KG + GraphRAG -->
+    <section class="qa-section section-anchor" id="kg">
+      <h2>Knowledge Graphs &amp; GraphRAG (M6–M7)</h2>
+
+      <div class="qa-card"><div class="q-text">Q: When do you reach for a knowledge graph instead of (or alongside) a vector store?</div><div class="a-text">When the data has relationships that matter to queries. "Find customers who bought X and filed a complaint" is a graph traversal — vectors can\'t represent structural facts. Default to vector for fuzzy text-similarity needs; add graph when queries cross entities. Often both: vectors for fuzzy recall, graph for structured constraints.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: How do you stop an LLM-built KG from drifting?</div><div class="a-text">Three guardrails. (1) Strict ontology — a documented allowlist of entity types, relationship types, properties. The LLM can\'t invent "BROUGHT" or "Client" if they\'re not on the list. (2) Schema constraints in Neo4j (uniqueness, existence, type). Bad extractions fail at ingestion, loudly. (3) Provenance on every fact — when drift slips through, trace the source job and re-run with tightened extractor.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: How big should your v1 ontology be?</div><div class="a-text">5-10 entity types max. Adding types is cheap; removing them after they\'re used is expensive. Start small — Customer, Order, Product, Ticket — and add only when you have queries that demand new types. Over-modeling Day 1 is the single most common KG mistake.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: What is GraphRAG and what does it add over vector RAG?</div><div class="a-text">GraphRAG combines three retrieval lanes — vector (semantic similarity), full-text (BM25, exact match), graph traversal (relationships) — then reranks. Adds two capabilities. (1) Multi-hop queries — "which customers affected by the SupplyCo recall via this Order → Product → Batch path." (2) Path-based explainability — answer includes both citations AND the entity traversal, which compliance buyers require.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: When NOT to bother with GraphRAG?</div><div class="a-text">When data is flat documents with no entity overlap (e.g., independent research papers). When queries are all "what does this doc say." When you won\'t invest in ontology + extraction maintenance. Honest test: name 3 real queries today that vector RAG fails on. If you can\'t, GraphRAG is premature.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: Why filter the graph BEFORE vector search, not after?</div><div class="a-text">Performance and relevance. Graph filter narrows candidate set dramatically (50k chunks → 2k after "in tier-A customers"). Vector then runs on a fraction of the corpus — faster, more on-topic. Filter-then-search beats search-then-filter on every dimension at scale.</div></div>
+
+      <div class="red-flag">
+        <h5>Red flags to avoid</h5>
+        <ul>
+          <li>"Replace our vector store entirely with a KG" — hybrid wins</li>
+          <li>50-entity-type ontology Day 1 — drift guaranteed</li>
+          <li>Skipping provenance ("we\'ll add it later") — you won\'t</li>
+          <li>Confidently saying "GraphRAG" when you mean "KG plus an LLM"</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- MCP -->
+    <section class="qa-section section-anchor" id="mcp">
+      <h2>MCP &amp; Tool Standardization (M8)</h2>
+
+      <div class="qa-card"><div class="q-text">Q: What is MCP and what problem does it solve?</div><div class="a-text">Model Context Protocol — an open standard from Anthropic (adopted across Microsoft, LangChain, etc.) for agent-to-tool communication. Before MCP, every framework had its own tool format; switching meant re-implementing every integration. MCP standardizes the contract: write a server once, every compliant agent can use it. USB-C for AI.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: How do you keep an MCP server safe?</div><div class="a-text">Read-only by default — every tool ships as a read; writes added explicitly one at a time. Allowlist scope — Slack server exposes 3 channels, not 200; Postgres exposes views, not base tables. Per-server auth (OAuth, mTLS, API key) so compromise of one doesn\'t cascade. Audit log every call. HITL gates at the agent layer (not the server) for irreversible actions.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: Why per-server credentials instead of a shared one?</div><div class="a-text">Bounded blast radius. If a server\'s creds leak or are abused, only that server\'s scope is affected. A shared "MCP credential" would be the worst of both worlds — central target, broad scope. The MCP server design assumes each server is independently authenticated, scoped, and rotatable.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: When should an internal capability become an MCP server vs. stay as direct code?</div><div class="a-text">MCP when (a) multiple agents/teams will reuse, (b) well-defined security boundary, (c) you want framework independence, (d) the capability has reusable CRUD-ish structure. Direct code when (a) it\'s used in one place only, (b) it\'s deeply specific to one agent\'s internal logic, (c) you\'re still prototyping. Heuristic: if you\'d write the same integration twice for two agents, convert it.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: What\'s the strategic value beyond internal reuse?</div><div class="a-text">Distribution. The same MCP server that exposes your platform internally can be exposed to customers — they connect Claude / Cursor / custom agents to your platform via the same protocol. You become a node in the broader MCP ecosystem instead of one more API documented in a PDF. That\'s strategic moat.</div></div>
+
+      <div class="red-flag">
+        <h5>Red flags to avoid</h5>
+        <ul>
+          <li>"MCP is just function calling" — protocol + discovery + security model, not just calling</li>
+          <li>Building one giant MCP server for everything — split by capability domain</li>
+          <li>Skipping per-server auth and hoping nothing leaks</li>
+          <li>Putting HITL inside the server instead of the agent</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Safety -->
+    <section class="qa-section section-anchor" id="safety">
+      <h2>Safety &amp; Guardrails (M9)</h2>
+
+      <div class="qa-card"><div class="q-text">Q: What\'s the #1 security risk in production LLM apps?</div><div class="a-text">Prompt injection, particularly <em>indirect</em> injection — a retrieved document or webpage contains hostile instructions that the agent reads as input and obeys. It\'s worse than direct injection because the attacker doesn\'t need access to the user. Defense is layered: input validation, source labeling, output validation, allowlists, HITL — and not relying on the LLM being un-injectable.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: How do you stop your agent from exfiltrating data?</div><div class="a-text">Architecture, not hope. Views-only DB access — agent queries against views that filter rows and mask columns; base tables unreachable. Allowlisted communication channels — send_email only targets curated addresses. Output validation regex for PII patterns before any external send. HITL on every send. Continuous monitoring for spikes. If any one layer fails, others catch it.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: What does "defense in depth" mean in practice?</div><div class="a-text">Five layers: input validation (PII redaction, injection detection); output validation (schema check, content filter); allowlists (scope of tools, channels, recipients, views); HITL on irreversible; continuous monitoring (anomaly detection on tool patterns, costs, refusal rate). No single layer suffices. Each catches what the previous missed.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: Allowlist vs blocklist — why allowlist?</div><div class="a-text">Allowlists deny by default; you explicitly permit. Blocklists fail open — they always miss something new an attacker tries. In security-critical contexts (which agentic AI is), allowlist scopes are non-negotiable. Slack channels, DB views, email recipients, tool names — all allowlists.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: A founder says "we\'ll add guardrails after launch." Push back in 30 seconds.</div><div class="a-text">"Three reasons we can\'t. One: prompt injection is the #1 security risk in production LLM apps — first incident will be expensive in remediation and trust. Two: retrofitting guardrails is roughly 4× the cost of designing them in — schema validation flows through every endpoint, allowlists need definition before tools are used freely. Three: enterprise sales reviews stall on \'show me your security posture\' — every quarter without it is closed-lost in pipeline. One engineering week for the v1 stack — not a launch blocker; the difference between a serious launch and a fragile one."</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: What does continuous monitoring catch that pre-launch testing missed?</div><div class="a-text">Production reality — input distribution shift, model drift, new attack patterns, edge cases. Track injection-attempt rate, refusal rate, tool-call anomalies, content-filter trips, cost p99. Trend lines + alert thresholds. The injection trend doesn\'t lie; pre-launch tests show what you imagined, not what users will actually try.</div></div>
+
+      <div class="red-flag">
+        <h5>Red flags to avoid</h5>
+        <ul>
+          <li>"Prompt injection is hype" — it\'s the #1 risk per OWASP 2026</li>
+          <li>Regex-only defenses ("we\'ll filter bad patterns") — defense in depth means layers</li>
+          <li>"The LLM won\'t do something stupid" — assume it will; design to be safe anyway</li>
+          <li>Skipping audit logs because "they take space"</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Eval -->
+    <section class="qa-section section-anchor" id="eval">
+      <h2>Evaluation &amp; Observability (M10)</h2>
+
+      <div class="qa-card"><div class="q-text">Q: How do you know your agent is getting better over time, not worse?</div><div class="a-text">Labeled eval dataset (200+ cases) run against every prompt/model change. Five signals tracked: task success, schema validity, groundedness, cost p99, latency p99. LLM-as-judge for subjective signals, calibrated against humans on 50 cases at &gt;85% agreement. Regression check gates merges. Without this, "is it better" is vibes.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: How do you set up LLM-as-judge honestly?</div><div class="a-text">Three rules. (1) Different model than the agent — GPT judging GPT is lenient on itself. (2) Calibrate: 50 human-labeled cases; measure judge-vs-human agreement; iterate prompt until &gt;85%. (3) Force the judge to include reasoning — lets you spot sloppy judges and refine. Without calibration, scores are noise dressed up as data.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: An LLM provider updates a model. What\'s your process?</div><div class="a-text">Three-stage rollout. (1) Run our 200-case eval dataset on the new model — quality delta on every signal. (2) Shadow deploy: 5% production traffic to new model, 2-3 days of live score comparison. (3) Gradual rollout: 25% → 50% → 100% with auto-rollback on any signal regression. Without traces + eval, you find out via customer complaints — wrong feedback loop, weeks late.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: Your team is "over-evaluating" — 18 metrics nobody reads. How do you fix it?</div><div class="a-text">Cut to 5 that drive ship decisions: task success, schema validity, one quality signal (groundedness for RAG), cost p99, latency p99. Build a tiered pipeline: CI smoke (2 min on PR), nightly regression (15 min), comprehensive eval (1 hour). One dashboard, weekly 30-min review. If a metric doesn\'t move the conversation, drop it.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: Why prompt versioning matters.</div><div class="a-text">Decouples prompt iteration from code deploys. Every trace logs the prompt version used; when quality drops, you know which version to roll back. Deploy = config change, not code release. Rollback in seconds. The registry also enables A/B testing of versioned prompts against the same dataset.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: What\'s the smallest viable eval setup for a 3-person team?</div><div class="a-text">Week 1: pick one observability tool (Langfuse free tier); auto-trace every LLM call; build 30 representative test cases; write a script that runs them and posts scores; add a regression check before merging prompts. Week 2-3: add cost + latency monitoring; grow dataset to 100 cases; add one LLM-as-judge metric. Total ~5 engineering days. After: ahead of 90% of teams.</div></div>
+
+      <div class="red-flag">
+        <h5>Red flags to avoid</h5>
+        <ul>
+          <li>"We don\'t need eval; the LLM is accurate enough" — measure or it\'s vibes</li>
+          <li>"Same model as judge, it\'s cheaper" — lenient bias</li>
+          <li>Eval dataset never grown — gets stale, doesn\'t reflect production</li>
+          <li>"Latency monitoring is a future thing" — p99 is where cost spikes hide</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- No-code -->
+    <section class="qa-section section-anchor" id="nocode">
+      <h2>No-Code Workflows (M11)</h2>
+
+      <div class="qa-card"><div class="q-text">Q: When does no-code (n8n) fit better than coded automation?</div><div class="a-text">When the workflow is business glue (trigger → integrations → notify), when non-engineers will own and maintain it, when volume is moderate (hundreds-thousands/day), when you\'re still prototyping. Use code (LangGraph etc.) when logic is complex with state and loops, when latency is critical, or when volume crosses ~10k/day.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: Should your entire AI strategy run on n8n?</div><div class="a-text">No, but ~30% of it. n8n for cross-system glue, periodic batch jobs, low-volume HITL workflows, things non-engineers own. Code for customer-facing real-time agents, high-volume processing, complex agentic reasoning. Best pattern: agentic logic in code (exposed as APIs / MCP servers); n8n calls those when business events occur.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: How do you govern n8n at scale?</div><div class="a-text">Same as code, just visual. Centralized credentials in n8n\'s store (no hardcoded keys). Designated workflow owners. Stage → review → promote (no editing prod live). Quarterly review of active workflows. Self-host for sensitive data. Audit log retained per compliance. Same rules from M9 — allowlisted recipients on sends, least-privilege creds, HITL on irreversibles.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: A teammate built a workflow that posted incorrectly to a customer. How do you respond?</div><div class="a-text">Disable, investigate, fix the workflow (add HITL gate, tighten triggers, allowlist channels), then change the process — review checklist before any workflow touches external systems, quarterly audit. Same incident-response discipline as coded systems. n8n is visual code, not magic.</div></div>
+
+      <div class="red-flag">
+        <h5>Red flags to avoid</h5>
+        <ul>
+          <li>"n8n is for hobbyists" — used in production at Fortune 50 scale</li>
+          <li>"Everything in n8n" — won\'t scale beyond ~10k events/day</li>
+          <li>Hardcoded API keys in workflow node fields</li>
+          <li>"It\'s no-code so it doesn\'t need review" — visual code is code</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Text-to-SQL -->
+    <section class="qa-section section-anchor" id="sql">
+      <h2>Governed Text-to-SQL (M12)</h2>
+
+      <div class="qa-card"><div class="q-text">Q: Why views, not base tables, for the agent\'s SQL access?</div><div class="a-text">Architectural defense. Views filter rows + mask columns + enforce read-only — limits exfiltration regardless of what SQL the LLM generates. Even if every other layer fails, the agent simply cannot reach what isn\'t in a view. Hope is not a strategy; allowlists are.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: An attacker prompt-injects "drop the customers table." What happens?</div><div class="a-text">Four layers reject it. (1) LLM may or may not comply — irrelevant. (2) Validator parses generated SQL: non-SELECT → rejected before dispatch. (3) Allowlist requires referencing v_* views; base tables aren\'t addressable. (4) Even if all that failed, the warehouse credential is SELECT-only on views-only — DB itself rejects DDL. Safe by architecture, not by hoping the LLM behaves.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: How do you know the SQL is correct, not just safe?</div><div class="a-text">Three signals. Daily eval against 50 questions with known answers — accuracy tracked weekly. LLM-as-judge for plausibility on every execution. User feedback ("this answer looks wrong") tags the run, adds to eval set. Over time, eval grows; accuracy climbs. Without this loop you\'re shipping vibes.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: How do you handle the inevitable runaway query?</div><div class="a-text">Mandatory dry-run cost estimation before execution. &lt; 1GB → auto-approve. 1-10GB → HITL approval. &gt; 10GB → reject with refinement prompt. LIMIT injected on every query without one. Per-user daily quota. Cost p99 alerts within 5 min. Together: zero runaway-bill incidents.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: Does this pattern only work on Databricks?</div><div class="a-text">No. Same pattern applies on Snowflake (Horizon + dynamic data masking), BigQuery (policy tags + column-level security), Redshift, etc. The Unity Catalog primitives have equivalents in every modern warehouse. The architecture transfers; the runtime is implementation detail.</div></div>
+
+      <div class="red-flag">
+        <h5>Red flags to avoid</h5>
+        <ul>
+          <li>"We\'ll let the agent query base tables, it\'s easier" — first leak away from disaster</li>
+          <li>"LIMIT is annoying" — your bill will disagree</li>
+          <li>No eval set for SQL correctness — you\'ll be shipping wrong answers</li>
+          <li>"We don\'t need an approval gate for SELECT-only" — for expensive scans, you do</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Project behavioral -->
+    <section class="qa-section section-anchor" id="projects">
+      <h2>Project behavioral questions</h2>
+
+      <div class="qa-card"><div class="q-text">Q: Walk me through Project 1 (GraphRAG) — what would you do differently next time?</div><div class="a-text">Three things. (1) Start with a smaller ontology (5 entity types not 10) — we over-modeled, several relationships were never queried. (2) Invest in eval dataset earlier — we built infra before we had a labeled set to validate against, then re-tuned everything. (3) Add the path-explainability output schema from Day 1 — bolted on later, retrofitting was painful. The pattern was right; the sequence wasn\'t.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: In Project 2 (multi-agent), how did you decide on 3 workers, not 5?</div><div class="a-text">Eval-driven. We tried 5 (researcher, planner, communicator, reviewer, compliance) and 3 (research, planner, reviewer). The 5-agent version had 2x cost, 1.5x latency, and no measurable accuracy gain on our 100-case test set. Added agents introduced cross-agent edge cases that hurt more than they helped. Discipline: minimum agents that exhaust the natural decomposition, validated by eval.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: In Project 3 (MCP), how did you decide which capabilities deserved an MCP server vs. staying internal?</div><div class="a-text">Three rules. (1) Used in 2+ places? → MCP. (2) Has clean security boundary? → MCP. (3) Specific to one agent\'s internal cognition? → internal. So Postgres, Slack, GitHub, Stripe all became MCP servers (cross-agent reuse + clean boundaries). The agent\'s own planning logic stayed internal. The honest test: would we write this twice if not MCP? If yes, MCP.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: In Project 4 (Text-to-SQL), describe a specific failure case and how you fixed it.</div><div class="a-text">A user asked "show me last year\'s top customers" — the agent generated a query using YEAR() on signup_date, returning customers who signed up last year (not who spent the most). The LLM mis-interpreted "top" without context. Fix: enriched view metadata in the schema injection (description: "top is by revenue, not by signup date"); added few-shot examples covering "top" / "best" / "biggest" mapping to revenue aggregation; added a confirmation step for ambiguous superlatives. Eval set added 5 similar cases. Accuracy on superlative questions went from 60% to 95%.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: In Project 5 (eval), describe a regression you caught that would have shipped without it.</div><div class="a-text">A prompt change "to be more concise" passed code review and seemed fine on a few manual tests. Our eval pipeline caught a 15-point drop in citation coverage — the more-concise prompt was dropping citations to save tokens. Without that signal, the change would have shipped, hallucination would have risen ~30%, and we\'d be doing forensics 3 weeks later via a customer complaint. Eval saved a quarter of trust damage.</div></div>
+    </section>
+
+    <!-- Founder-specific -->
+    <section class="qa-section section-anchor" id="founder">
+      <h2>Founder-specific questions</h2>
+
+      <div class="qa-card"><div class="q-text">Q: How do you decide build vs. buy for AI capabilities?</div><div class="a-text">Three criteria. (1) Is this a differentiator or commodity? Build differentiators (your domain knowledge, your data); buy commodities (model APIs, vector stores, observability tools). (2) Maintenance cost vs. switching cost — if a vendor\'s pricing might change, prefer open-source self-host. (3) Strategic moat — building your own MCP servers exposes a distribution surface; building your own LLM rarely makes sense. Default to buy; build the specific things you do uniquely well.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: What\'s your AI infrastructure spend story for investors?</div><div class="a-text">Three line items, predictable. (1) Model API costs — variable, tracked per-feature, hard budgets. (2) Vector DB / KG / observability infra — fixed, $X/month. (3) Engineering ownership — N% of a team\'s time. ROI proven per feature: revenue from agent-enabled features vs. spend on those features. Cost discipline via Langfuse cost monitoring; surprises pinned to specific agents/tenants the same day, not month-end.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: How do you defend agentic AI design choices to a CFO?</div><div class="a-text">Two framings. (1) Risk — "without HITL on the refund flow, one mis-execution is $X in disputed charges + reputation hit; the HITL queue costs Y hours/week. Y &lt;&lt; X." (2) Optionality — "schema-validated outputs cost a small per-call overhead and unlock automated evaluation; without them, every quality regression is a customer-found bug." Frame design choices as risk-reward, not "best practice."</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: An investor asks "what if Anthropic / OpenAI just builds this?" 60-second answer.</div><div class="a-text">"They build models. We build systems on top of those models — schema-validated outputs, multi-source retrieval (vector + graph), governed tool access (MCP), enterprise observability and audit (Langfuse), industry-specific guardrails and views. The model is the cheapest layer of the stack. The hard part is the system that wraps it. Anthropic gets stronger as a substrate; our differentiation increases, doesn\'t decrease. They have no incentive to build domain-specific governed agents — that\'s our wedge."</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: What\'s the biggest mistake you see founders making with agentic AI?</div><div class="a-text">Two tied. (1) Multi-agent because it sounds impressive — when a single ReAct loop would do the job at 1/4 the cost. (2) Skipping eval discipline — shipping prompt changes on vibes, finding out via customer complaints. The teams winning aren\'t the ones with the cleverest prompts; they\'re the ones with eval discipline, observability, and the willingness to ship simpler architectures.</div></div>
+
+      <div class="qa-card"><div class="q-text">Q: If you could only invest in ONE engineering practice for an early agentic-AI team, what would it be?</div><div class="a-text">Evaluation + observability. ~1 engineering week investment. After: every change validated against a labeled set; every production decision queryable as a trace; cost / latency / quality trended weekly. Without it, every other practice is built on sand — you can\'t even tell if your changes are improvements. With it, the whole team operates with discipline that compounds.</div></div>
+
+      <div class="red-flag">
+        <h5>Red flags to avoid as a founder</h5>
+        <ul>
+          <li>"We use cutting-edge AI" — investors want to see governance and ROI, not buzzwords</li>
+          <li>"We don\'t worry about prompt injection" — instant deal-killer in enterprise sales</li>
+          <li>No eval framework — every quality conversation degenerates into vibes</li>
+          <li>"Our agents have full autonomy" — production agents are L2-L3, claiming L4+ red-flags you</li>
+        </ul>
+      </div>
+    </section>
+
+    <nav class="module-nav">
+      <a class="module-nav__btn" href="index.html"><div class="dir">← Previous</div><div class="title">Resume Kit</div></a>
+      <a class="module-nav__btn module-nav__btn--next" href="../index.html"><div class="dir">→</div><div class="title">Course home</div></a>
+    </nav>
+  </main>
+
+  <footer class="site-footer"><div>Full Stack Agentic AI Engineering · Interview Bank · <a href="../index.html">Course home</a></div></footer>
+
+  <script src="../assets/js/progress.js"></script>
+  <script src="../assets/js/nav.js"></script>
+  <script src="../assets/js/ui.js"></script>
+  <script src="../assets/data/syllabus.js"></script>
+  <script>renderSiteHeader('#site-header', '../');</script>
+</body>
+</html>

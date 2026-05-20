@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Certificate of Completion · Pictu-e-Learning</title>
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/module.css">
+  <style>
+    /* Certificate-specific styles */
+    body { background: var(--bg); }
+
+    .cert-controls {
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.5rem 1.75rem;
+      margin: 1.5rem auto;
+      max-width: 920px;
+    }
+    .cert-controls h2 { margin-top: 0; }
+    .cert-controls .cert-form {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+    .cert-controls label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--ink-soft);
+      margin-bottom: 0.35rem;
+      font-weight: 600;
+    }
+    .cert-controls input[type="text"] {
+      flex: 1;
+      min-width: 220px;
+      padding: 0.6rem 0.85rem;
+      font-size: 1rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      background: var(--bg);
+      color: var(--ink);
+    }
+    .cert-controls input[type="text"]:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+    /* The certificate itself */
+    .cert-wrap {
+      max-width: 1100px;
+      margin: 1.5rem auto 3rem;
+      padding: 0 1rem;
+    }
+    .certificate {
+      background: linear-gradient(135deg, #FAF6EE 0%, #F3EDDF 100%);
+      color: #1A1A1A;
+      padding: 3.5rem 4rem 3rem;
+      border: 3px solid #7A5E2F;
+      box-shadow:
+        inset 0 0 0 1px #FFFEF8,
+        inset 0 0 0 5px #C5A572,
+        inset 0 0 0 6px #FFFEF8,
+        0 8px 32px rgba(0, 0, 0, 0.08);
+      position: relative;
+      aspect-ratio: 297 / 210;
+      font-family: Georgia, 'Times New Roman', serif;
+      overflow: hidden;
+    }
+
+    /* Corner ornaments */
+    .corner {
+      position: absolute;
+      width: 70px;
+      height: 70px;
+      opacity: 0.55;
+    }
+    .corner--tl { top: 18px; left: 18px; }
+    .corner--tr { top: 18px; right: 18px; transform: scaleX(-1); }
+    .corner--bl { bottom: 18px; left: 18px; transform: scaleY(-1); }
+    .corner--br { bottom: 18px; right: 18px; transform: scale(-1, -1); }
+
+    .cert-institution {
+      text-align: center;
+      font-family: Georgia, serif;
+      font-size: 1.5rem;
+      letter-spacing: 0.32em;
+      color: #7A5E2F;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+      text-transform: uppercase;
+    }
+    .cert-institution-sub {
+      text-align: center;
+      font-size: 0.8rem;
+      letter-spacing: 0.18em;
+      color: #7A5E2F;
+      text-transform: uppercase;
+      margin-bottom: 2rem;
+    }
+    .cert-title {
+      text-align: center;
+      font-family: Georgia, serif;
+      font-size: 2.6rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: #1A1A1A;
+      margin: 0 0 0.5rem;
+    }
+    .cert-divider {
+      display: block;
+      width: 220px;
+      height: 1px;
+      background: #7A5E2F;
+      margin: 0.5rem auto 1.75rem;
+      position: relative;
+    }
+    .cert-divider::before, .cert-divider::after {
+      content: "♦";
+      position: absolute;
+      top: -0.7em;
+      color: #7A5E2F;
+      font-size: 1rem;
+    }
+    .cert-divider::before { left: -1.2em; }
+    .cert-divider::after { right: -1.2em; }
+
+    .cert-presented {
+      text-align: center;
+      font-size: 1.05rem;
+      color: #4A3D26;
+      font-style: italic;
+      margin-bottom: 1rem;
+    }
+    .cert-name {
+      text-align: center;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-style: italic;
+      font-size: 3.2rem;
+      font-weight: 400;
+      color: #1A1A1A;
+      margin: 0.5rem 0 1rem;
+      padding: 0 1rem 0.5rem;
+      border-bottom: 1px solid #C5A572;
+      letter-spacing: 0.01em;
+      min-height: 4rem;
+    }
+    .cert-completed {
+      text-align: center;
+      font-size: 1rem;
+      color: #4A3D26;
+      margin-bottom: 0.8rem;
+    }
+    .cert-course {
+      text-align: center;
+      font-family: Georgia, serif;
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: #1A1A1A;
+      margin: 0.4rem 0 0.85rem;
+      letter-spacing: 0.02em;
+    }
+    .cert-details {
+      text-align: center;
+      font-size: 0.92rem;
+      color: #4A3D26;
+      line-height: 1.6;
+      max-width: 700px;
+      margin: 0 auto 1.6rem;
+      font-style: italic;
+    }
+
+    .cert-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-top: 1.5rem;
+      padding-top: 1.25rem;
+    }
+    .cert-sig {
+      text-align: left;
+      flex: 1;
+    }
+    .cert-sig-line {
+      width: 200px;
+      height: 1px;
+      background: #4A3D26;
+      margin-bottom: 0.35rem;
+    }
+    .cert-sig-label {
+      font-size: 0.78rem;
+      color: #4A3D26;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+    .cert-sig-sublabel {
+      font-size: 0.78rem;
+      color: #7A5E2F;
+      font-style: italic;
+      margin-top: 0.15rem;
+    }
+    .cert-date {
+      text-align: center;
+      flex: 1;
+    }
+    .cert-date-label {
+      font-size: 0.78rem;
+      color: #4A3D26;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-bottom: 0.35rem;
+    }
+    .cert-date-value {
+      font-size: 1rem;
+      color: #1A1A1A;
+      font-family: Georgia, serif;
+    }
+    .cert-seal-wrap {
+      flex: 1;
+      display: flex;
+      justify-content: flex-end;
+    }
+    .cert-seal {
+      width: 130px;
+      height: 130px;
+    }
+
+    .cert-modules {
+      font-size: 0.72rem;
+      color: #7A5E2F;
+      text-align: center;
+      margin-top: 1.25rem;
+      letter-spacing: 0.08em;
+      font-style: italic;
+    }
+
+    /* Print styles */
+    @page { size: A4 landscape; margin: 0; }
+    @media print {
+      body { background: white; margin: 0; }
+      .site-header, .cert-controls, .cert-actions-row, .site-footer { display: none !important; }
+      .cert-wrap { max-width: none; margin: 0; padding: 0; }
+      .certificate {
+        width: 100vw; height: 100vh;
+        aspect-ratio: auto;
+        border-radius: 0;
+        page-break-inside: avoid;
+      }
+    }
+
+    .cert-actions-row {
+      max-width: 1100px;
+      margin: 0 auto 2rem;
+      padding: 0 1rem;
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .gated-message {
+      max-width: 720px;
+      margin: 2rem auto;
+      padding: 2rem;
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      text-align: center;
+    }
+    .gated-message h2 { margin-top: 0; }
+    .gated-message .progress-bar { margin: 1.25rem auto; max-width: 400px; height: 10px; }
+
+    @media (max-width: 800px) {
+      .certificate { padding: 2rem 2rem 1.5rem; aspect-ratio: auto; }
+      .cert-title { font-size: 1.8rem; }
+      .cert-name { font-size: 2.2rem; }
+      .cert-course { font-size: 1.3rem; }
+      .cert-footer { flex-direction: column; gap: 1.5rem; align-items: center; text-align: center; }
+      .cert-sig, .cert-date, .cert-seal-wrap { text-align: center; }
+      .cert-sig-line { margin: 0 auto 0.35rem; }
+      .cert-seal-wrap { justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site-header" id="site-header"></header>
+
+  <main>
+    <!-- Gated message (shown if not all modules passed) -->
+    <section id="gated" class="gated-message" hidden>
+      <h2>🔒 Certificate locked</h2>
+      <p id="gated-text" style="color: var(--ink-soft);">Loading…</p>
+      <div class="progress-bar">
+        <div class="progress-bar__fill" id="gated-fill"></div>
+      </div>
+      <p style="margin-top: 1.5rem;">
+        <a class="btn" href="../index.html">← Back to course home</a>
+      </p>
+    </section>
+
+    <!-- Controls (form to capture name) -->
+    <section id="controls" class="cert-controls" hidden>
+      <h2 style="margin-bottom: 0.25rem;">🏆 Generate your Pictu-e-Learning certificate</h2>
+      <p style="color: var(--ink-soft); margin-bottom: 0;">You\'ve passed all required module tests. Enter your full name as you\'d like it to appear on the certificate, then click Generate. The certificate updates live — when it looks right, click <strong>Download as PDF</strong>.</p>
+
+      <div class="cert-form">
+        <div style="flex: 1;">
+          <label for="name-input">Full name (as it should appear on the certificate)</label>
+          <input type="text" id="name-input" placeholder="e.g., Anurag Kumar" autocomplete="name" maxlength="80">
+        </div>
+        <button class="btn" id="apply-name-btn">Apply</button>
+      </div>
+      <p style="font-size: 0.85rem; color: var(--ink-muted); margin: 0.75rem 0 0;">Your name is saved locally in this browser only — it never leaves your device.</p>
+    </section>
+
+    <!-- Actions row (print/back/edit) -->
+    <section id="actions" class="cert-actions-row" hidden>
+      <button class="btn" onclick="window.print()">📄 Download as PDF (Print)</button>
+      <button class="btn btn--ghost" id="edit-name-btn">✎ Edit name</button>
+      <a class="btn btn--ghost" href="../index.html">← Back to course</a>
+    </section>
+
+    <!-- The certificate -->
+    <section class="cert-wrap" id="cert-wrap" hidden>
+      <div class="certificate" id="certificate">
+        <!-- Corner ornaments -->
+        <svg class="corner corner--tl" viewBox="0 0 70 70" xmlns="http://www.w3.org/2000/svg">
+          <path d="M5 5 L5 30 M5 5 L30 5" stroke="#7A5E2F" stroke-width="1.5" fill="none"/>
+          <path d="M10 10 L10 22 M10 10 L22 10" stroke="#C5A572" stroke-width="1" fill="none"/>
+          <circle cx="14" cy="14" r="2.5" fill="#7A5E2F"/>
+          <path d="M20 14 Q 28 14 28 22" stroke="#7A5E2F" stroke-width="1" fill="none"/>
+          <path d="M14 20 Q 14 28 22 28" stroke="#7A5E2F" stroke-width="1" fill="none"/>
+          <circle cx="32" cy="14" r="1.5" fill="#C5A572"/>
+          <circle cx="14" cy="32" r="1.5" fill="#C5A572"/>
+        </svg>
+        <svg class="corner corner--tr" viewBox="0 0 70 70" xmlns="http://www.w3.org/2000/svg">
+          <path d="M5 5 L5 30 M5 5 L30 5" stroke="#7A5E2F" stroke-width="1.5" fill="none"/>
+          <path d="M10 10 L10 22 M10 10 L22 10" stroke="#C5A572" stroke-width="1" fill="none"/>
+          <circle cx="14" cy="14" r="2.5" fill="#7A5E2F"/>
+          <path d="M20 14 Q 28 14 28 22" stroke="#7A5E2F" stroke-width="1" fill="none"/>
+          <path d="M14 20 Q 14 28 22 28" stroke="#7A5E2F" stroke-width="1" fill="none"/>
+          <circle cx="32" cy="14" r="1.5" fill="#C5A572"/>
+          <circle cx="14" cy="32" r="1.5" fill="#C5A572"/>
+        </svg>
+        <svg class="corner corner--bl" viewBox="0 0 70 70" xmlns="http://www.w3.org/2000/svg">
+          <path d="M5 5 L5 30 M5 5 L30 5" stroke="#7A5E2F" stroke-width="1.5" fill="none"/>
+          <path d="M10 10 L10 22 M10 10 L22 10" stroke="#C5A572" stroke-width="1" fill="none"/>
+          <circle cx="14" cy="14" r="2.5" fill="#7A5E2F"/>
+          <path d="M20 14 Q 28 14 28 22" stroke="#7A5E2F" stroke-width="1" fill="none"/>
+          <path d="M14 20 Q 14 28 22 28" stroke="#7A5E2F" stroke-width="1" fill="none"/>
+          <circle cx="32" cy="14" r="1.5" fill="#C5A572"/>
+          <circle cx="14" cy="32" r="1.5" fill="#C5A572"/>
+        </svg>
+        <svg class="corner corner--br" viewBox="0 0 70 70" xmlns="http://www.w3.org/2000/svg">
+          <path d="M5 5 L5 30 M5 5 L30 5" stroke="#7A5E2F" stroke-width="1.5" fill="none"/>
+          <path d="M10 10 L10 22 M10 10 L22 10" stroke="#C5A572" stroke-width="1" fill="none"/>
+          <circle cx="14" cy="14" r="2.5" fill="#7A5E2F"/>
+          <path d="M20 14 Q 28 14 28 22" stroke="#7A5E2F" stroke-width="1" fill="none"/>
+          <path d="M14 20 Q 14 28 22 28" stroke="#7A5E2F" stroke-width="1" fill="none"/>
+          <circle cx="32" cy="14" r="1.5" fill="#C5A572"/>
+          <circle cx="14" cy="32" r="1.5" fill="#C5A572"/>
+        </svg>
+
+        <div class="cert-institution">Pictu&hairsp;-&hairsp;e&hairsp;-&hairsp;Learning</div>
+        <div class="cert-institution-sub">Continuing Professional Education</div>
+
+        <h1 class="cert-title">Certificate of Completion</h1>
+        <div class="cert-divider"></div>
+
+        <p class="cert-presented">This is to certify that</p>
+        <div class="cert-name" id="cert-name">Your Name</div>
+        <p class="cert-completed">has successfully completed the program of study</p>
+        <div class="cert-course">Full Stack Agentic AI Engineering</div>
+        <p class="cert-details">
+          A thirteen-module curriculum covering agentic AI architectures &amp; design patterns,
+          LangChain &amp; LangGraph, agentic RAG, knowledge graphs &amp; GraphRAG, the Model Context Protocol,
+          guardrails &amp; safety, evaluation &amp; observability, no-code automation,
+          and governed enterprise data systems — together with five portfolio-grade system designs.
+        </p>
+
+        <div class="cert-footer">
+          <div class="cert-sig">
+            <div class="cert-sig-line"></div>
+            <div class="cert-sig-label">Course Director</div>
+            <div class="cert-sig-sublabel">Pictu-e-Learning</div>
+          </div>
+
+          <div class="cert-date">
+            <div class="cert-date-label">Issued</div>
+            <div class="cert-date-value" id="cert-date">—</div>
+          </div>
+
+          <div class="cert-seal-wrap">
+            <svg class="cert-seal" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <path id="seal-top-arc" d="M 70,70 m -55,0 a 55,55 0 1,1 110,0" />
+                <path id="seal-bottom-arc" d="M 70,70 m -48,0 a 48,48 0 1,0 96,0" />
+              </defs>
+              <circle cx="70" cy="70" r="62" fill="none" stroke="#7A5E2F" stroke-width="2"/>
+              <circle cx="70" cy="70" r="55" fill="none" stroke="#7A5E2F" stroke-width="1"/>
+              <circle cx="70" cy="70" r="40" fill="#FAF6EE" stroke="#C5A572" stroke-width="1"/>
+              <text font-family="Georgia, serif" font-size="9" fill="#7A5E2F" font-weight="700" letter-spacing="2.5">
+                <textPath href="#seal-top-arc" startOffset="50%" text-anchor="middle">★ PICTU-E-LEARNING ★</textPath>
+              </text>
+              <text font-family="Georgia, serif" font-size="8" fill="#7A5E2F" letter-spacing="2">
+                <textPath href="#seal-bottom-arc" startOffset="50%" text-anchor="middle">CERTIFIED COMPLETION</textPath>
+              </text>
+              <!-- Center mark -->
+              <text x="70" y="68" text-anchor="middle" font-family="Georgia, serif" font-size="28" fill="#7A5E2F" font-weight="700">PE</text>
+              <text x="70" y="86" text-anchor="middle" font-family="Georgia, serif" font-size="9" fill="#7A5E2F" letter-spacing="2">2026</text>
+            </svg>
+          </div>
+        </div>
+
+        <div class="cert-modules">Modules: Essentials · Architectures · LangChain · LangGraph · Agentic RAG · Knowledge Graphs · GraphRAG · MCP · Guardrails · Evaluation · No-Code · Text-to-SQL</div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer"><div>Full Stack Agentic AI Engineering · Certificate · <a href="../index.html">Course home</a></div></footer>
+
+  <script src="../assets/js/progress.js"></script>
+  <script src="../assets/js/nav.js"></script>
+  <script src="../assets/js/ui.js"></script>
+  <script src="../assets/data/syllabus.js"></script>
+  <script>
+    renderSiteHeader('#site-header', '../');
+
+    const gatedEl = document.getElementById('gated');
+    const gatedTextEl = document.getElementById('gated-text');
+    const gatedFillEl = document.getElementById('gated-fill');
+    const controlsEl = document.getElementById('controls');
+    const actionsEl = document.getElementById('actions');
+    const certWrapEl = document.getElementById('cert-wrap');
+    const nameInputEl = document.getElementById('name-input');
+    const applyNameBtn = document.getElementById('apply-name-btn');
+    const editNameBtn = document.getElementById('edit-name-btn');
+    const certNameEl = document.getElementById('cert-name');
+    const certDateEl = document.getElementById('cert-date');
+
+    function formatDate(d) {
+      const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+    }
+
+    function showCertificate(name) {
+      certNameEl.textContent = name;
+      certDateEl.textContent = formatDate(new Date());
+      controlsEl.hidden = true;
+      actionsEl.hidden = false;
+      certWrapEl.hidden = false;
+    }
+
+    function showNameForm(prefill) {
+      controlsEl.hidden = false;
+      actionsEl.hidden = true;
+      certWrapEl.hidden = true;
+      if (prefill) nameInputEl.value = prefill;
+      setTimeout(function () { nameInputEl.focus(); }, 50);
+    }
+
+    applyNameBtn.addEventListener('click', function () {
+      const name = (nameInputEl.value || '').trim();
+      if (!name) {
+        alert('Please enter your name as it should appear on the certificate.');
+        nameInputEl.focus();
+        return;
+      }
+      if (name.length < 2) {
+        alert('Please enter a valid name.');
+        return;
+      }
+      CourseProgress.setUserName(name);
+      showCertificate(name);
+      window.scrollTo({ top: certWrapEl.offsetTop - 20, behavior: 'smooth' });
+    });
+
+    nameInputEl.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); applyNameBtn.click(); }
+    });
+
+    editNameBtn.addEventListener('click', function () {
+      showNameForm(CourseProgress.getUserName());
+      window.scrollTo({ top: controlsEl.offsetTop - 20, behavior: 'smooth' });
+    });
+
+    // Boot: check eligibility, then either gate or show
+    (function () {
+      const allPassed = CourseProgress.allRequiredPassed(window.SYLLABUS);
+      const summary = CourseProgress.overall(window.SYLLABUS);
+
+      if (!allPassed) {
+        gatedEl.hidden = false;
+        const remaining = summary.total - summary.passed;
+        gatedTextEl.innerHTML = '<strong>' + summary.passed + ' of ' + summary.total + ' module tests passed.</strong><br>You need to pass <strong>' + remaining + ' more</strong> module test(s) (≥80% each) before the Pictu-e-Learning certificate is available.';
+        gatedFillEl.style.width = summary.pct + '%';
+        return;
+      }
+
+      const storedName = CourseProgress.getUserName();
+      if (storedName) {
+        showCertificate(storedName);
+      } else {
+        showNameForm('');
+      }
+    })();
+  </script>
+</body>
+</html>

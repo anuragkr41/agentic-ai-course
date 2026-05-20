@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module 2 — Architectures & Design Patterns · Agentic AI Course</title>
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/module.css">
+  <link rel="stylesheet" href="../assets/css/print.css">
+</head>
+<body data-module-id="module-02">
+
+  <header class="site-header" id="site-header"></header>
+
+  <section class="module-hero">
+    <div class="module-hero__inner">
+      <div class="num">Module 2</div>
+      <h1>Architectures & Design Patterns</h1>
+      <p class="subtitle">The named patterns every agentic system uses. Learn them once, recognize them everywhere, brief your team in their language.</p>
+      <div class="meta">
+        <span>⏱ ~80 min (incl. videos)</span>
+        <span>·</span>
+        <span>3 curated videos + 1 walkthrough</span>
+        <span>·</span>
+        <span>10 MCQs + 3 scenarios · ≥80% to unlock M3</span>
+      </div>
+    </div>
+  </section>
+
+  <main class="container">
+
+    <h2 id="why">Why this matters</h2>
+    <p>
+      In Module 1 you learned what an agent <em>is</em>. In Module 2 you learn how agents are actually <em>structured</em> — the half-dozen named patterns that every production team uses. These are the interview shorthand, the brief-your-engineer vocabulary, and the design lens you'll apply to every project in this course.
+    </p>
+    <p>
+      The bad news: patterns are easy to memorize and harder to apply. Most founders pick the wrong one because the wrong one sounds more impressive. The good news: there's a decision framework. By the end of this module you'll defend your pattern choice in 30 seconds, not 30 minutes of waffling.
+    </p>
+
+    <div class="objectives">
+      <h4>You'll be able to</h4>
+      <ul>
+        <li>Distinguish the three classic architectures: router, planner-executor, supervisor-worker</li>
+        <li>Explain ReAct in one breath and recognize when an agent is "doing ReAct"</li>
+        <li>Apply reflection / self-critique to high-stakes outputs (and skip it on low-stakes ones)</li>
+        <li>Design tool contracts that your engineers won't curse you for</li>
+        <li>Use the planning pattern when ReAct alone isn't enough</li>
+        <li>Trade off latency, cost, reliability, and auditability — and explain the tradeoffs to investors</li>
+        <li>Pick the right pattern for a brief in under a minute using a decision tree</li>
+      </ul>
+    </div>
+
+    <div class="toc">
+      <h4>Table of contents</h4>
+      <ol>
+        <li><a href="#patterns-matter">Why patterns matter (and which six to know)</a></li>
+        <li><a href="#three-archs">Three architecture types: router, planner-executor, supervisor-worker</a></li>
+        <li><a href="#react">ReAct — the foundational reason + act loop</a></li>
+        <li><a href="#reflection">Reflection / self-critique</a></li>
+        <li><a href="#tool-use">Tool-use pattern (and contracts)</a></li>
+        <li><a href="#planning">Planning pattern</a></li>
+        <li><a href="#tradeoffs">Design considerations: latency, cost, reliability, auditability</a></li>
+        <li><a href="#decision-tree">A decision framework for picking a pattern</a></li>
+        <li><a href="#books">Books, papers, and deeper reading</a></li>
+        <li><a href="#resume">Founder skills + resume panel</a></li>
+        <li><a href="#test">Module test</a></li>
+      </ol>
+    </div>
+
+    <h2 id="patterns-matter" class="section-anchor">1. Why patterns matter (and which six to know)</h2>
+    <p>
+      A "pattern" is a named, reusable solution to a recurring problem. The reason patterns matter in agentic AI is the same reason they matter in software architecture: <strong>they compress communication</strong>. You say "supervisor-worker with HITL gates" and a senior engineer immediately understands ~80% of your design.
+    </p>
+    <p>For founders, patterns do three things:</p>
+    <ul>
+      <li><strong>They make your brief specific.</strong> "Build a planner-executor with a router on top" beats "build an AI thing that does the work."</li>
+      <li><strong>They flag tradeoffs early.</strong> Each pattern has known weaknesses. Knowing them up front lets you reject a pattern <em>before</em> burning a quarter on it.</li>
+      <li><strong>They survive vendor changes.</strong> The pattern is the same whether your team uses LangGraph, Microsoft Agent Framework, AWS Bedrock AgentCore, or Vertex AI. Vendors come and go; patterns stay.</li>
+    </ul>
+    <p>
+      The six patterns this module covers — <strong>router, planner-executor, supervisor-worker, ReAct, reflection, tool-use, planning</strong> — are the ones you'll see referenced in every serious 2026 talk. They're not exclusive of each other; a real system layers several.
+    </p>
+
+    <h2 id="three-archs" class="section-anchor">2. Three architecture types: router, planner-executor, supervisor-worker</h2>
+    <p>
+      First the three macro-architectures — how the overall control flow looks. Then we'll go into the patterns that live <em>inside</em> them.
+    </p>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 720 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three architecture types: router, planner-executor, supervisor-worker">
+        <defs>
+          <marker id="m2-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#3D5AFE"/>
+          </marker>
+        </defs>
+
+        <!-- Router -->
+        <text x="120" y="28" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#1A1A1A" font-weight="700">Router</text>
+        <rect x="80" y="45" width="80" height="38" rx="6" fill="#EDF0FF" stroke="#3D5AFE" stroke-width="1.5"/>
+        <text x="120" y="69" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#1A1A1A">classify</text>
+        <line x1="100" y1="83" x2="60" y2="120" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#m2-arr)"/>
+        <line x1="120" y1="83" x2="120" y2="120" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#m2-arr)"/>
+        <line x1="140" y1="83" x2="180" y2="120" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#m2-arr)"/>
+        <rect x="30" y="125" width="60" height="32" rx="4" fill="#FFFFFF" stroke="#7A7A7A"/>
+        <text x="60" y="145" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#1A1A1A">path A</text>
+        <rect x="90" y="125" width="60" height="32" rx="4" fill="#FFFFFF" stroke="#7A7A7A"/>
+        <text x="120" y="145" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#1A1A1A">path B</text>
+        <rect x="150" y="125" width="60" height="32" rx="4" fill="#FFFFFF" stroke="#7A7A7A"/>
+        <text x="180" y="145" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#1A1A1A">path C</text>
+        <text x="120" y="200" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#4A4A4A">One step picks the lane.</text>
+        <text x="120" y="215" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#4A4A4A">Cheap and predictable.</text>
+        <text x="120" y="240" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#7A7A7A" font-style="italic">"Classify intent, then run"</text>
+
+        <!-- Planner-Executor -->
+        <text x="360" y="28" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#1A1A1A" font-weight="700">Planner → Executor</text>
+        <rect x="305" y="45" width="110" height="38" rx="6" fill="#EDF0FF" stroke="#3D5AFE" stroke-width="1.5"/>
+        <text x="360" y="69" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#1A1A1A">planner (LLM)</text>
+        <line x1="360" y1="83" x2="360" y2="105" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#m2-arr)"/>
+        <rect x="295" y="110" width="130" height="32" rx="4" fill="#F3F0E8" stroke="#7A7A7A"/>
+        <text x="360" y="130" text-anchor="middle" font-family="SF Mono, monospace" font-size="10" fill="#1A1A1A">step 1 → step 2 → ...</text>
+        <line x1="360" y1="142" x2="360" y2="160" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#m2-arr)"/>
+        <rect x="305" y="165" width="110" height="32" rx="4" fill="#E6F4E6" stroke="#2E7D32"/>
+        <text x="360" y="185" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#1A1A1A">executor</text>
+        <text x="360" y="217" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#4A4A4A">Plan first, then execute.</text>
+        <text x="360" y="232" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#4A4A4A">Clear audit trail.</text>
+        <text x="360" y="255" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#7A7A7A" font-style="italic">"Decompose, then act"</text>
+
+        <!-- Supervisor-Worker -->
+        <text x="600" y="28" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="#1A1A1A" font-weight="700">Supervisor → Worker</text>
+        <rect x="565" y="45" width="80" height="38" rx="6" fill="#EDF0FF" stroke="#3D5AFE" stroke-width="2"/>
+        <text x="605" y="69" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#1A1A1A">supervisor</text>
+        <line x1="585" y1="83" x2="545" y2="120" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#m2-arr)"/>
+        <line x1="605" y1="83" x2="605" y2="120" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#m2-arr)"/>
+        <line x1="625" y1="83" x2="665" y2="120" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#m2-arr)"/>
+        <circle cx="545" cy="140" r="22" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.5"/>
+        <text x="545" y="143" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#1A1A1A">researcher</text>
+        <circle cx="605" cy="140" r="22" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.5"/>
+        <text x="605" y="143" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#1A1A1A">writer</text>
+        <circle cx="665" cy="140" r="22" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.5"/>
+        <text x="665" y="143" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#1A1A1A">reviewer</text>
+        <text x="605" y="200" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#4A4A4A">Specialists per role.</text>
+        <text x="605" y="215" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#4A4A4A">Boss decides order &amp; stop.</text>
+        <text x="605" y="240" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#7A7A7A" font-style="italic">"Delegate, integrate"</text>
+      </svg>
+      <figcaption>The three macro-architectures. Most production systems mix them — e.g., a router on top of a planner-executor whose steps invoke a supervisor-worker for the complex bits.</figcaption>
+    </figure>
+
+    <table class="compare-table">
+      <thead><tr><th>Pattern</th><th>When it shines</th><th>When it breaks</th></tr></thead>
+      <tbody>
+        <tr><td>Router</td><td>Distinct intents with clear paths (support categories, query types). Cheap, low latency.</td><td>Intents overlap or are fuzzy. Misclassification = wrong path.</td></tr>
+        <tr><td>Planner-Executor</td><td>Multi-step tasks where you need an explicit plan to show users or auditors.</td><td>Plans get stale mid-execution; the LLM commits to bad early steps.</td></tr>
+        <tr><td>Supervisor-Worker</td><td>Work decomposes into specialist roles; parallelism helps; governance demands separation.</td><td>Workers loop, supervisor over-reasons, costs balloon. Most over-engineered pattern.</td></tr>
+      </tbody>
+    </table>
+
+    <figure class="video-embed">
+      <div class="video-embed__frame">
+        <iframe src="https://www.youtube.com/embed/Dwyx8GomVvQ"
+                title="Armchair Architects: Multi-agent Orchestration and Patterns — Microsoft Azure"
+                loading="lazy"
+                allowfullscreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+      </div>
+      <figcaption>
+        <span class="video-embed__meta">Watch · Microsoft Azure · NASDAQ: MSFT · Jan 2026</span>
+        <strong>Armchair Architects: Multi-agent Orchestration and Patterns</strong>
+        Microsoft's Azure Essentials series — two enterprise architects discuss multi-agent orchestration patterns in production. Listen for how they distinguish supervisor-worker from peer collaboration, and which patterns they advise against. Founder-relevant: this is the language your enterprise customers will use.
+        <br><a class="video-embed__yt-link" href="https://www.youtube.com/watch?v=Dwyx8GomVvQ" target="_blank" rel="noopener">Open on YouTube ↗</a>
+      </figcaption>
+    </figure>
+
+    <h2 id="react" class="section-anchor">3. ReAct — the foundational reason + act loop</h2>
+    <p>
+      ReAct (Reason + Act, Yao et al., 2022) is the single most important pattern in agentic AI. Almost every modern agent has a ReAct loop somewhere inside. The intuition: <strong>the LLM alternates between thinking and acting, observing the result of each action before deciding the next step</strong>.
+    </p>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 600 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ReAct loop: Thought, Action, Observation">
+        <defs>
+          <marker id="react-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#3D5AFE"/>
+          </marker>
+        </defs>
+
+        <rect x="40" y="85" width="120" height="50" rx="8" fill="#EDF0FF" stroke="#3D5AFE" stroke-width="1.5"/>
+        <text x="100" y="105" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#3D5AFE" font-weight="700">THOUGHT</text>
+        <text x="100" y="123" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#4A4A4A">"What do I do next?"</text>
+
+        <line x1="160" y1="110" x2="220" y2="110" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#react-arr)"/>
+
+        <rect x="230" y="85" width="120" height="50" rx="8" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.5"/>
+        <text x="290" y="105" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#1A1A1A" font-weight="700">ACTION</text>
+        <text x="290" y="123" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#4A4A4A">call_tool(args)</text>
+
+        <line x1="350" y1="110" x2="410" y2="110" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#react-arr)"/>
+
+        <rect x="420" y="85" width="140" height="50" rx="8" fill="#E6F4E6" stroke="#2E7D32" stroke-width="1.5"/>
+        <text x="490" y="105" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#2E7D32" font-weight="700">OBSERVATION</text>
+        <text x="490" y="123" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#4A4A4A">tool result</text>
+
+        <path d="M 490 135 Q 490 200 100 200 Q 50 200 50 135" fill="none" stroke="#B85C00" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#react-arr)"/>
+        <text x="300" y="220" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#B85C00" font-style="italic">loop until goal met or budget exhausted</text>
+      </svg>
+      <figcaption>The ReAct loop. Each iteration: the LLM produces a Thought, takes an Action (tool call), receives an Observation. Repeat until done.</figcaption>
+    </figure>
+
+    <p>Concretely, a ReAct trace looks like this:</p>
+    <pre><code>Thought: I need the customer's order date to check the policy.
+Action: lookup_order(order_id="4821")
+Observation: { date: "2026-05-10", amount: 200, status: "shipped" }
+
+Thought: Order is 8 days old, within the 30-day refund window. Let me confirm the damage report.
+Action: lookup_damage_report(order_id="4821")
+Observation: { reported_at: "2026-05-15", photos: 3, severity: "high" }
+
+Thought: All criteria met. I'll propose a $200 refund.
+Action: propose_refund(order_id="4821", amount=200, reason="damage")
+Observation: { status: "pending_approval", ticket: "#R-981" }
+
+Thought: Done. Goal achieved.</code></pre>
+
+    <p>Three things to know about ReAct in production:</p>
+    <ul>
+      <li><strong>It can loop forever.</strong> If the LLM picks bad actions, it just keeps thinking. <em>Always</em> set a max-iterations budget (typically 5–15). When hit, escalate to a human or return a partial result.</li>
+      <li><strong>The Thought step is the audit trail.</strong> Log every thought verbatim. When an agent does something wrong, you'll need to read its reasoning to debug. This is gold for both engineering and compliance.</li>
+      <li><strong>Tools must be well-specified.</strong> Bad tool descriptions = LLM picks the wrong tool. Module 8 (MCP) standardizes this; for now know that tool name + description + input schema is what the LLM sees.</li>
+    </ul>
+
+    <div class="walkthrough" data-walkthrough-id="m2-react">
+      <div class="walkthrough__header">
+        <h4 class="walkthrough__title">▷ Step through: A ReAct loop in action</h4>
+        <span class="walkthrough__subtitle">6 steps · refund scenario from M1</span>
+      </div>
+      <div class="walkthrough__viewport">
+        <svg viewBox="0 0 700 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ReAct walkthrough">
+          <defs>
+            <marker id="wt3-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0,0 L10,5 L0,10 z" fill="#3D5AFE"/>
+            </marker>
+          </defs>
+
+          <!-- Goal -->
+          <rect x="20" y="20" width="660" height="42" rx="6" fill="#F3F0E8" stroke="#7A7A7A" stroke-width="1.2"/>
+          <text x="32" y="38" font-family="Inter, sans-serif" font-size="10" fill="#7A7A7A">GOAL</text>
+          <text x="32" y="55" font-family="Inter, sans-serif" font-size="12" fill="#1A1A1A">Resolve refund for order #4821 — customer says shipment damaged.</text>
+
+          <!-- Iteration 1 -->
+          <g data-wf="1,2,3,4,5,6">
+            <rect x="20" y="80" width="200" height="60" rx="6" fill="#EDF0FF" stroke="#3D5AFE" stroke-width="1.2"/>
+            <text x="32" y="98" font-family="Inter, sans-serif" font-size="9" fill="#3D5AFE">THOUGHT 1</text>
+            <text x="32" y="115" font-family="Inter, sans-serif" font-size="11" fill="#1A1A1A">"Need the order details</text>
+            <text x="32" y="130" font-family="Inter, sans-serif" font-size="11" fill="#1A1A1A">to check policy."</text>
+          </g>
+          <g data-wf="2,3,4,5,6">
+            <line x1="220" y1="110" x2="245" y2="110" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#wt3-arr)"/>
+            <rect x="250" y="80" width="200" height="60" rx="6" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.2"/>
+            <text x="262" y="98" font-family="Inter, sans-serif" font-size="9" fill="#7A7A7A">ACTION 1</text>
+            <text x="262" y="118" font-family="SF Mono, monospace" font-size="10" fill="#1A1A1A">lookup_order(</text>
+            <text x="262" y="131" font-family="SF Mono, monospace" font-size="10" fill="#1A1A1A">  id="4821")</text>
+          </g>
+          <g data-wf="3,4,5,6">
+            <line x1="450" y1="110" x2="475" y2="110" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#wt3-arr)"/>
+            <rect x="480" y="80" width="200" height="60" rx="6" fill="#E6F4E6" stroke="#2E7D32" stroke-width="1.2"/>
+            <text x="492" y="98" font-family="Inter, sans-serif" font-size="9" fill="#2E7D32">OBSERVATION 1</text>
+            <text x="492" y="118" font-family="SF Mono, monospace" font-size="10" fill="#1A1A1A">date: 2026-05-10</text>
+            <text x="492" y="131" font-family="SF Mono, monospace" font-size="10" fill="#1A1A1A">amount: $200</text>
+          </g>
+
+          <!-- Iteration 2 -->
+          <g data-wf="4,5,6">
+            <rect x="20" y="160" width="200" height="60" rx="6" fill="#EDF0FF" stroke="#3D5AFE" stroke-width="1.2"/>
+            <text x="32" y="178" font-family="Inter, sans-serif" font-size="9" fill="#3D5AFE">THOUGHT 2</text>
+            <text x="32" y="196" font-family="Inter, sans-serif" font-size="11" fill="#1A1A1A">"8 days old — within</text>
+            <text x="32" y="210" font-family="Inter, sans-serif" font-size="11" fill="#1A1A1A">30-day window. Check damage."</text>
+          </g>
+          <g data-wf="5,6">
+            <line x1="220" y1="190" x2="245" y2="190" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#wt3-arr)"/>
+            <rect x="250" y="160" width="200" height="60" rx="6" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.2"/>
+            <text x="262" y="178" font-family="Inter, sans-serif" font-size="9" fill="#7A7A7A">ACTION 2</text>
+            <text x="262" y="198" font-family="SF Mono, monospace" font-size="10" fill="#1A1A1A">lookup_damage(</text>
+            <text x="262" y="211" font-family="SF Mono, monospace" font-size="10" fill="#1A1A1A">  order="4821")</text>
+            <line x1="450" y1="190" x2="475" y2="190" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#wt3-arr)"/>
+            <rect x="480" y="160" width="200" height="60" rx="6" fill="#E6F4E6" stroke="#2E7D32" stroke-width="1.2"/>
+            <text x="492" y="178" font-family="Inter, sans-serif" font-size="9" fill="#2E7D32">OBSERVATION 2</text>
+            <text x="492" y="198" font-family="SF Mono, monospace" font-size="10" fill="#1A1A1A">3 photos, severe</text>
+            <text x="492" y="211" font-family="SF Mono, monospace" font-size="10" fill="#1A1A1A">reported 2026-05-15</text>
+          </g>
+
+          <!-- Final -->
+          <g data-wf="6">
+            <rect x="120" y="245" width="460" height="56" rx="6" fill="#EDF0FF" stroke="#3D5AFE" stroke-width="2"/>
+            <text x="135" y="263" font-family="Inter, sans-serif" font-size="9" fill="#3D5AFE">FINAL THOUGHT + ACTION</text>
+            <text x="135" y="282" font-family="Inter, sans-serif" font-size="11" fill="#1A1A1A">"All criteria met — propose $200 refund."</text>
+            <text x="135" y="296" font-family="SF Mono, monospace" font-size="10" fill="#1A1A1A">→ propose_refund(...)  // hands off to HITL gate from M1</text>
+          </g>
+        </svg>
+      </div>
+      <div class="walkthrough__caption">
+        <h4 class="walkthrough__step-title"></h4>
+        <p class="walkthrough__step-body"></p>
+      </div>
+      <div class="walkthrough__controls">
+        <button class="walkthrough__nav-btn" data-action="prev" aria-label="Previous step">←</button>
+        <span class="walkthrough__step-indicator"></span>
+        <button class="walkthrough__nav-btn" data-action="next" aria-label="Next step">→</button>
+        <button class="walkthrough__play-btn" data-action="play">▶ Play</button>
+      </div>
+    </div>
+
+    <h2 id="reflection" class="section-anchor">4. Reflection / self-critique</h2>
+    <p>
+      Reflection adds a critic on top of a generator. The LLM produces an output, then a (usually same) LLM critiques that output against criteria, then the generator revises. Loop until the critic is satisfied or you've spent your budget.
+    </p>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 600 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Reflection pattern: generator and critic loop">
+        <defs>
+          <marker id="ref-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#3D5AFE"/>
+          </marker>
+        </defs>
+
+        <rect x="50" y="80" width="140" height="56" rx="8" fill="#EDF0FF" stroke="#3D5AFE" stroke-width="1.5"/>
+        <text x="120" y="100" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#3D5AFE" font-weight="700">GENERATOR</text>
+        <text x="120" y="118" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#4A4A4A">drafts output</text>
+
+        <line x1="190" y1="108" x2="240" y2="108" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#ref-arr)"/>
+
+        <rect x="250" y="80" width="140" height="56" rx="8" fill="#FFF1E0" stroke="#B85C00" stroke-width="1.5"/>
+        <text x="320" y="100" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#B85C00" font-weight="700">CRITIC</text>
+        <text x="320" y="118" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#4A4A4A">scores + finds gaps</text>
+
+        <line x1="390" y1="108" x2="440" y2="108" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#ref-arr)"/>
+
+        <rect x="450" y="80" width="110" height="56" rx="8" fill="#E6F4E6" stroke="#2E7D32" stroke-width="1.5"/>
+        <text x="505" y="100" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#2E7D32" font-weight="700">PASS?</text>
+        <text x="505" y="118" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#4A4A4A">return / loop</text>
+
+        <path d="M 505 136 Q 505 180 120 180 Q 60 180 60 136" fill="none" stroke="#B85C00" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#ref-arr)"/>
+        <text x="300" y="200" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#B85C00" font-style="italic">on fail: send critique back to generator</text>
+      </svg>
+      <figcaption>Generator-critic loop. Critic can be the same LLM with a critique prompt, or a different model. Each loop costs an extra LLM call — use sparingly.</figcaption>
+    </figure>
+
+    <p>When to use reflection:</p>
+    <ul>
+      <li><strong>Yes:</strong> high-stakes outputs (legal drafts, financial summaries, customer-facing copy), code generation, complex reasoning where errors compound.</li>
+      <li><strong>No:</strong> simple classification, low-stakes drafts, real-time interactions where latency matters more than polish, anything you'll review by hand anyway.</li>
+    </ul>
+
+    <div class="callout callout--warn">
+      <h4>The reflection trap</h4>
+      <p>Adding a critic doubles your LLM cost and latency per iteration. If your generator is already 90% accurate, the critic might only catch one mistake per 100 — and you've paid 2× for everyone. Measure first; add reflection only where data shows it pays back.</p>
+    </div>
+
+    <h2 id="tool-use" class="section-anchor">5. Tool-use pattern (and contracts)</h2>
+    <p>
+      "Tool use" sounds trivial — the agent calls a function. It isn't. The reason this is its own named pattern: <strong>how you describe the tool determines whether the LLM picks the right one</strong>. Good tool descriptions are the difference between a working agent and an embarrassing demo.
+    </p>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 600 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Tool-use pattern with contract">
+        <defs>
+          <marker id="tu-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#3D5AFE"/>
+          </marker>
+        </defs>
+
+        <rect x="20" y="90" width="110" height="50" rx="8" fill="#EDF0FF" stroke="#3D5AFE" stroke-width="1.5"/>
+        <text x="75" y="111" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#3D5AFE" font-weight="700">AGENT</text>
+        <text x="75" y="128" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#4A4A4A">decides</text>
+
+        <line x1="130" y1="115" x2="180" y2="115" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#tu-arr)"/>
+
+        <rect x="190" y="60" width="200" height="110" rx="8" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.5"/>
+        <text x="290" y="80" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#7A7A7A" font-weight="700">TOOL CONTRACT</text>
+        <line x1="200" y1="86" x2="380" y2="86" stroke="#D9D5CC"/>
+        <text x="205" y="103" font-family="SF Mono, monospace" font-size="10" fill="#1A1A1A">name: lookup_order</text>
+        <text x="205" y="119" font-family="SF Mono, monospace" font-size="9" fill="#4A4A4A">desc: "Fetch order by ID."</text>
+        <text x="205" y="135" font-family="SF Mono, monospace" font-size="9" fill="#4A4A4A">input: { id: string }</text>
+        <text x="205" y="151" font-family="SF Mono, monospace" font-size="9" fill="#4A4A4A">output: { date, amount }</text>
+        <text x="205" y="165" font-family="SF Mono, monospace" font-size="9" fill="#4A4A4A">side_effects: none</text>
+
+        <line x1="390" y1="115" x2="440" y2="115" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#tu-arr)"/>
+
+        <rect x="450" y="90" width="130" height="50" rx="8" fill="#E6F4E6" stroke="#2E7D32" stroke-width="1.5"/>
+        <text x="515" y="111" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#2E7D32" font-weight="700">EXECUTE</text>
+        <text x="515" y="128" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#4A4A4A">+ return result</text>
+      </svg>
+      <figcaption>A tool contract has 5 fields: name, description, input schema, output schema, side-effects flag. The LLM only sees these — it can't read your code.</figcaption>
+    </figure>
+
+    <p>The cardinal rule of tool contracts: <strong>the description is the prompt</strong>. The LLM picks tools based on names + descriptions. So:</p>
+    <ul>
+      <li><strong>Verb-first names.</strong> <code>lookup_order</code>, <code>send_email</code>, <code>propose_refund</code>. Not <code>OrderUtility</code>.</li>
+      <li><strong>One sentence description.</strong> Says what it does AND when to use it. "Fetches order details by ID. Use before any refund decision."</li>
+      <li><strong>Strict input schemas.</strong> Required vs optional fields, types, allowed values. Schema = validator = guardrail.</li>
+      <li><strong>Mark side effects.</strong> "Read-only" tools are safe to call freely. "Write" tools should route through a HITL gate (Module 1).</li>
+      <li><strong>Idempotency keys</strong> on write tools. Calling <code>send_email</code> twice should not send two emails.</li>
+    </ul>
+
+    <figure class="video-embed">
+      <div class="video-embed__frame">
+        <iframe src="https://www.youtube.com/embed/GYlPFmrATjU"
+                title="Amazon Bedrock Agents and AgentCore Design Patterns — AWS re:Invent 2025"
+                loading="lazy"
+                allowfullscreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+      </div>
+      <figcaption>
+        <span class="video-embed__meta">Watch · AWS · NASDAQ: AMZN · re:Invent 2025</span>
+        <strong>Amazon Bedrock Agents and AgentCore Design Patterns (TNC322)</strong>
+        AWS's deep-dive on agent design patterns at their largest annual conference. Covers tool-use contracts, ReAct loops, multi-agent orchestration, and how to wire them into production AgentCore deployments. Pattern vocabulary is identical across AWS, Microsoft, and Google — what changes is the implementation runtime.
+        <br><a class="video-embed__yt-link" href="https://www.youtube.com/watch?v=GYlPFmrATjU" target="_blank" rel="noopener">Open on YouTube ↗</a>
+      </figcaption>
+    </figure>
+
+    <h2 id="planning" class="section-anchor">6. Planning pattern</h2>
+    <p>
+      Sometimes ReAct's "decide one step at a time" isn't enough. If a task has 10 dependent steps and the first decision shapes the rest, you want the agent to <em>plan</em> the whole thing first, then execute. That's the planning pattern (also called Plan-and-Execute or Plan-and-Solve).
+    </p>
+    <p>Workflow:</p>
+    <ol>
+      <li><strong>Plan.</strong> The LLM reads the goal and outputs a numbered list of steps. No tools called yet.</li>
+      <li><strong>Execute.</strong> Each step runs (typically using ReAct internally for the actual tool calls).</li>
+      <li><strong>Reassess.</strong> After each step, check: is the plan still valid given what we observed? If not, re-plan.</li>
+    </ol>
+
+    <p>When planning beats ReAct:</p>
+    <ul>
+      <li><strong>Many dependent steps.</strong> Booking travel: flight choice constrains hotel, which constrains itinerary.</li>
+      <li><strong>You need to show users / auditors the plan</strong> before committing. "Here's what I'll do — approve?" — this is essentially HITL on the plan.</li>
+      <li><strong>Parallelizable steps.</strong> Once you have a plan you can run independent steps in parallel.</li>
+    </ul>
+    <p>When planning hurts:</p>
+    <ul>
+      <li><strong>Tasks are short.</strong> The plan is just one step long.</li>
+      <li><strong>Reality changes fast.</strong> The plan goes stale before you finish executing it.</li>
+      <li><strong>You don't have the data to plan well</strong> until you've explored — in which case ReAct is the explorer.</li>
+    </ul>
+
+    <h2 id="tradeoffs" class="section-anchor">7. Design considerations: latency, cost, reliability, auditability</h2>
+    <p>
+      Every pattern choice you make trades these four off against each other. Founders who can't articulate this lose investor questions in 60 seconds. The framing:
+    </p>
+
+    <table class="compare-table">
+      <thead><tr><th>Lever</th><th>What it means</th><th>How patterns affect it</th></tr></thead>
+      <tbody>
+        <tr><td>Latency</td><td>How long the user (or downstream system) waits.</td><td>Routers: fast. Planner-executor: slower (plan + steps). Reflection: 2× per loop. Multi-agent: depends on parallelism.</td></tr>
+        <tr><td>Cost</td><td>$ per task (mostly LLM tokens).</td><td>Each LLM call costs. ReAct = N calls. Reflection = 2N. Multi-agent = N × agents. Plan-then-execute can be cheaper than pure ReAct on long tasks.</td></tr>
+        <tr><td>Reliability</td><td>How often the agent achieves the goal correctly.</td><td>Reflection adds reliability at cost. Planning helps long tasks. Schema validation on tool outputs is the cheapest reliability gain.</td></tr>
+        <tr><td>Auditability</td><td>Can you reconstruct what happened and why?</td><td>ReAct's Thought log = audit trail. Plans = pre-commitment. Multi-agent = harder (cross-agent traces). HITL gates create natural audit checkpoints.</td></tr>
+      </tbody>
+    </table>
+
+    <p>Practical rules of thumb:</p>
+    <ul>
+      <li><strong>Latency under 2s</strong> for user-facing chat. Use the cheapest pattern that hits this — usually router or single-agent ReAct with a max-iteration cap.</li>
+      <li><strong>Latency under 30s</strong> for "agent thinking" UX. Show progress (e.g., "Looking up order…"). User tolerates more.</li>
+      <li><strong>Latency above 30s</strong> → batch mode. Email or webhook when done. Use planning + parallelism.</li>
+      <li><strong>Cost budget per task.</strong> Pick it explicitly. If the LLM call ceiling is $0.05, ReAct with 5 iterations on a cheap model is fine; multi-agent with reflection is not.</li>
+      <li><strong>Reliability ceiling.</strong> No agent hits 100%. Pick a target (e.g., 95% task success) and engineer to that. Above 99% is heroic — and usually means you're treating users as the last line of defense (via HITL).</li>
+    </ul>
+
+    <figure class="video-embed">
+      <div class="video-embed__frame">
+        <iframe src="https://www.youtube.com/embed/GDm_uH6VxPY"
+                title="AI agent design patterns — Google Cloud"
+                loading="lazy"
+                allowfullscreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+      </div>
+      <figcaption>
+        <span class="video-embed__meta">Watch · Google Cloud · NASDAQ: GOOGL</span>
+        <strong>AI agent design patterns — Google Cloud</strong>
+        Google Cloud's walkthrough of the canonical agent patterns with concrete production examples. Useful balance of theory and "here's how we'd ship it on Vertex AI." Listen for how they trade off latency vs. reliability — most teams underestimate the cost of reflection.
+        <br><a class="video-embed__yt-link" href="https://www.youtube.com/watch?v=GDm_uH6VxPY" target="_blank" rel="noopener">Open on YouTube ↗</a>
+      </figcaption>
+    </figure>
+
+    <h2 id="decision-tree" class="section-anchor">8. A decision framework for picking a pattern</h2>
+    <p>
+      The cheat sheet you can use mid-meeting. Walk top-down; first "yes" wins.
+    </p>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 700 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Decision tree for picking an agent pattern">
+        <defs>
+          <marker id="dec-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#3D5AFE"/>
+          </marker>
+        </defs>
+
+        <polygon points="350,20 470,60 350,100 230,60" fill="#FFF1E0" stroke="#B85C00" stroke-width="1.5"/>
+        <text x="350" y="55" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#1A1A1A" font-weight="700">Single intent</text>
+        <text x="350" y="73" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#1A1A1A">with clear paths?</text>
+
+        <line x1="230" y1="60" x2="180" y2="60" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#dec-arr)"/>
+        <text x="205" y="50" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#2E7D32" font-weight="700">YES</text>
+        <rect x="60" y="40" width="120" height="40" rx="6" fill="#EDF0FF" stroke="#3D5AFE" stroke-width="1.5"/>
+        <text x="120" y="65" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#1A1A1A" font-weight="700">→ Router</text>
+
+        <line x1="350" y1="100" x2="350" y2="125" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#dec-arr)"/>
+        <text x="365" y="115" font-family="Inter, sans-serif" font-size="10" fill="#B23A48" font-weight="700">NO</text>
+
+        <polygon points="350,130 470,170 350,210 230,170" fill="#FFF1E0" stroke="#B85C00" stroke-width="1.5"/>
+        <text x="350" y="165" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#1A1A1A" font-weight="700">Specialized roles</text>
+        <text x="350" y="183" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#1A1A1A">would help?</text>
+
+        <line x1="470" y1="170" x2="520" y2="170" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#dec-arr)"/>
+        <text x="495" y="160" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#2E7D32" font-weight="700">YES</text>
+        <rect x="530" y="150" width="150" height="40" rx="6" fill="#EDF0FF" stroke="#3D5AFE" stroke-width="1.5"/>
+        <text x="605" y="175" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#1A1A1A" font-weight="700">→ Supervisor-Worker</text>
+
+        <line x1="350" y1="210" x2="350" y2="235" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#dec-arr)"/>
+        <text x="365" y="225" font-family="Inter, sans-serif" font-size="10" fill="#B23A48" font-weight="700">NO</text>
+
+        <polygon points="350,240 470,280 350,320 230,280" fill="#FFF1E0" stroke="#B85C00" stroke-width="1.5"/>
+        <text x="350" y="275" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#1A1A1A" font-weight="700">Multi-step with</text>
+        <text x="350" y="293" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#1A1A1A">dependencies?</text>
+
+        <line x1="230" y1="280" x2="180" y2="280" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#dec-arr)"/>
+        <text x="205" y="270" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#2E7D32" font-weight="700">YES</text>
+        <rect x="40" y="260" width="140" height="40" rx="6" fill="#EDF0FF" stroke="#3D5AFE" stroke-width="1.5"/>
+        <text x="110" y="285" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#1A1A1A" font-weight="700">→ Planner-Executor</text>
+
+        <line x1="470" y1="280" x2="520" y2="280" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#dec-arr)"/>
+        <text x="495" y="270" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#B23A48" font-weight="700">NO</text>
+        <rect x="530" y="260" width="150" height="40" rx="6" fill="#E6F4E6" stroke="#2E7D32" stroke-width="1.5"/>
+        <text x="605" y="285" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#1A1A1A" font-weight="700">→ Single ReAct</text>
+
+        <text x="350" y="345" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#4A4A4A" font-style="italic">Always: ReAct inside each pattern. Add reflection on high-stakes outputs only.</text>
+      </svg>
+      <figcaption>The decision tree. Walk top-down. The vast majority of "first agentic feature" projects land at single ReAct — and that's correct.</figcaption>
+    </figure>
+
+    <div class="callout">
+      <h4>Founder shortcut</h4>
+      <p>If you can't justify in one sentence why your design isn't a single ReAct loop, build a single ReAct loop. You can upgrade later — going from one agent to many is a refactor; going from many to one is an admission of defeat.</p>
+    </div>
+
+    <!-- Books -->
+    <section class="books-section section-anchor" id="books">
+      <h2>📚 Books, Papers & Deeper Reading</h2>
+      <p>For Module 2 the most useful resources are the original research papers — patterns above came from them. Read the abstracts and the diagrams; skip the math.</p>
+
+      <h3 style="font-family: var(--font-sans); font-size: 0.95rem; margin: 1.25rem 0 0.6rem; color: var(--ink); text-transform: uppercase; letter-spacing: 0.05em;">Seminal papers (all free)</h3>
+      <div class="books-grid">
+        <div class="book-card">
+          <h4>ReAct: Synergizing Reasoning and Acting in LLMs</h4>
+          <div class="author">Yao et al. · Princeton + Google · 2022</div>
+          <div class="why">The paper that introduced ReAct. Read the abstract + Figure 1 + Section 3. You'll never look at an agent the same way again.</div>
+          <div class="meta meta--free">Free · <a href="https://arxiv.org/abs/2210.03629" target="_blank" rel="noopener">arxiv.org/abs/2210.03629 ↗</a></div>
+        </div>
+        <div class="book-card">
+          <h4>Reflexion: Language Agents with Verbal RL</h4>
+          <div class="author">Shinn et al. · Northeastern · 2023</div>
+          <div class="why">The reflection pattern's foundational paper. Shows how self-critique boosts agent performance on complex tasks. Diagrams in Section 2 are gold.</div>
+          <div class="meta meta--free">Free · <a href="https://arxiv.org/abs/2303.11366" target="_blank" rel="noopener">arxiv.org/abs/2303.11366 ↗</a></div>
+        </div>
+        <div class="book-card">
+          <h4>Plan-and-Solve Prompting</h4>
+          <div class="author">Wang et al. · UCSB + Microsoft · 2023</div>
+          <div class="why">The canonical planning paper — decompose the task into a plan first, then execute. Compare with ReAct in Section 4 of the paper.</div>
+          <div class="meta meta--free">Free · <a href="https://arxiv.org/abs/2305.04091" target="_blank" rel="noopener">arxiv.org/abs/2305.04091 ↗</a></div>
+        </div>
+        <div class="book-card">
+          <h4>Anthropic — Building Effective Agents</h4>
+          <div class="author">Anthropic Engineering · Dec 2024</div>
+          <div class="why">Already linked in M1, but read it again specifically for the patterns section. Anthropic's taxonomy is slightly different and worth absorbing.</div>
+          <div class="meta meta--free">Free · <a href="https://www.anthropic.com/engineering/building-effective-agents" target="_blank" rel="noopener">anthropic.com ↗</a></div>
+        </div>
+      </div>
+
+      <h3 style="font-family: var(--font-sans); font-size: 0.95rem; margin: 1.75rem 0 0.6rem; color: var(--ink); text-transform: uppercase; letter-spacing: 0.05em;">Books worth a chapter</h3>
+      <div class="books-grid">
+        <div class="book-card">
+          <h4>AI Engineering — Ch. 6 ("Agentic Patterns")</h4>
+          <div class="author">Chip Huyen · O'Reilly · 2024</div>
+          <div class="why">If you read one chapter of one book this module, make it this one. Takes the patterns above and shows production tradeoffs with real numbers.</div>
+          <div class="meta">Paid · ~40 pp</div>
+        </div>
+        <div class="book-card">
+          <h4>Patterns of Enterprise Application Architecture</h4>
+          <div class="author">Martin Fowler · 2002 (still relevant)</div>
+          <div class="why">Not agent-specific, but the discipline of <em>naming patterns and trading them off</em> originates here. Read the Preface and Ch. 1 for vocabulary that holds for life.</div>
+          <div class="meta">Paid · ~530 pp (skim)</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Founder skills + resume -->
+    <section id="resume" class="resume-panel section-anchor">
+      <h2>🚀 What You Can Now Build (and Claim)</h2>
+      <p style="margin-top: -0.5rem; color: var(--ink-soft);">
+        After Module 2 you can specify, debate, and defend pattern choices — which is the bulk of what an agentic-AI tech lead actually does day to day.
+      </p>
+
+      <h3>What you can now design end-to-end</h3>
+      <ul style="margin: 0 0 1.25rem 0.4rem; padding-left: 1.1rem;">
+        <li><strong>Pick the right macro-architecture</strong> (router / planner-executor / supervisor-worker) for a brief in under a minute, using the decision tree — and explain in one sentence why a single ReAct loop isn't enough.</li>
+        <li><strong>Spec tool contracts</strong> that LLMs can use reliably: verb-first names, one-sentence descriptions, strict input schemas, side-effects flagged, idempotency keys on writes.</li>
+        <li><strong>Decide where to add reflection</strong> based on stakes-per-output, not on theoretical purity — saving your team from 2× cost on cases where 90% baseline is fine.</li>
+        <li><strong>Negotiate latency / cost / reliability / auditability tradeoffs</strong> with investors, compliance, and your engineering team using shared vocabulary.</li>
+        <li><strong>Brief an engineer in one paragraph:</strong> "Build a router → planner-executor with ReAct inside each step. Reflect on the final summary. HITL gate on the email send. Log every Thought."</li>
+      </ul>
+
+      <h3>Resume bullets you can defend</h3>
+      <div class="resume-bullet" data-copy-text="Designed agentic architectures applying the canonical patterns (router, planner-executor, supervisor-worker, ReAct, reflection, planning, tool-use), choosing per use case based on a documented latency / cost / reliability / auditability tradeoff matrix.">
+        Designed agentic architectures applying the canonical patterns (router, planner-executor, supervisor-worker, ReAct, reflection, planning, tool-use), choosing per use case based on a documented latency / cost / reliability / auditability tradeoff matrix.
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="resume-bullet" data-copy-text="Specified tool contracts (name, description, input/output schemas, side-effect flags, idempotency keys) that LLM-based agents could call reliably — eliminating a class of "wrong tool picked" failures common in early production deployments.">
+        Specified tool contracts (name, description, input/output schemas, side-effect flags, idempotency keys) that LLM-based agents could call reliably — eliminating a class of "wrong tool picked" failures common in early production deployments.
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="resume-bullet" data-copy-text="Applied ReAct loops with max-iteration budgets and verbatim Thought logging to produce auditable agent traces — turning agents from a black box into a reviewable system for engineering and compliance.">
+        Applied ReAct loops with max-iteration budgets and verbatim Thought logging to produce auditable agent traces — turning agents from a black box into a reviewable system for engineering and compliance.
+        <button class="copy-btn">Copy</button>
+      </div>
+      <div class="resume-bullet" data-copy-text="Avoided over-engineering by defaulting to single-agent ReAct and upgrading to multi-agent only when work clearly decomposed by specialty — preventing the common "agents arguing with each other" failure mode and the 3× cost it brings.">
+        Avoided over-engineering by defaulting to single-agent ReAct and upgrading to multi-agent only when work clearly decomposed by specialty — preventing the common "agents arguing with each other" failure mode and the 3× cost it brings.
+        <button class="copy-btn">Copy</button>
+      </div>
+
+      <h3>Likely interview / investor / hiring questions</h3>
+      <div class="qa">
+        <div class="q">Q: Walk me through how you'd choose between ReAct and Plan-and-Execute for a given problem.</div>
+        <div class="a">A: ReAct decides one step at a time and observes results before the next decision — great when the right next step depends on what you just learned. Plan-and-Execute commits to a full plan first, then runs it — better when steps are dependent and you'd benefit from up-front commitment (auditable, parallelizable, human-approvable). I default to ReAct unless I need to show the plan to a user/auditor, or unless parallelism gives me real latency wins.</div>
+      </div>
+      <div class="qa">
+        <div class="q">Q: When would you NOT use reflection?</div>
+        <div class="a">A: When the baseline output quality is already high enough for the stakes. Reflection doubles cost and latency per loop. If my generator hits 90% on a task and the stakes are low — say internal triage notes — I won't pay 2× to catch the marginal mistake. I add reflection on high-stakes outputs: legal drafts, customer-facing emails, code, complex reasoning. Always after measuring, never speculatively.</div>
+      </div>
+      <div class="qa">
+        <div class="q">Q: Your agent is looping forever. What pattern issue is this?</div>
+        <div class="a">A: Almost certainly missing a max-iteration budget on a ReAct loop. The LLM keeps picking actions that don't progress toward the goal — sometimes because tool descriptions are ambiguous, sometimes because the goal itself is ill-defined. Fix: hard cap (e.g., 10 iterations), explicit "give up" tool the agent can call to escalate to a human, and verbatim Thought logs so you can debug why it got stuck.</div>
+      </div>
+      <div class="qa">
+        <div class="q">Q: How do you make agent decisions auditable for compliance?</div>
+        <div class="a">A: Three things. First, log every Thought, Action, and Observation in a ReAct trace — this is the audit trail. Second, force structured outputs validated against a schema before they leave the system (no "agent said something we can't parse"). Third, HITL gates on irreversible actions, with the gate decision and reviewer identity logged. Together you get a reconstructable chain: what the agent thought, what it tried, what it observed, what a human signed off, what changed in the world.</div>
+      </div>
+      <div class="qa">
+        <div class="q">Q: Why didn't you go multi-agent for this?</div>
+        <div class="a">A: I default to single-agent and upgrade only when (a) work decomposes by specialty, (b) parallelism materially helps, or (c) governance requires separation of concerns. For this use case none applied. Going multi-agent would have doubled cost, added cross-agent debugging, and introduced loop / deadlock failure modes — without measurable benefit. Going single-to-multi is a refactor; going multi-to-single is an admission of defeat.</div>
+      </div>
+
+      <h3>Claims you can vs. can't defend (yet)</h3>
+      <table class="claims-table">
+        <thead><tr><th>Claim</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>"Can pick the right architecture pattern for a use case in under a minute"</td><td class="safe">✓ Safe after this module</td></tr>
+          <tr><td>"Can defend latency / cost / reliability / auditability tradeoffs to a CTO or VP Eng"</td><td class="safe">✓ Safe after this module</td></tr>
+          <tr><td>"Have read the ReAct, Reflexion, and Plan-and-Solve papers"</td><td class="safe">✓ Safe once you actually read them — they're linked above</td></tr>
+          <tr><td>"Implemented ReAct in production"</td><td class="risky">✗ Not yet — needs Project 2</td></tr>
+          <tr><td>"Designed a tool contract spec for an internal team"</td><td class="safe">✓ Safe — write one as homework using the 5-field template above</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Test -->
+    <section id="test" class="section-anchor">
+      <div id="test-container"></div>
+    </section>
+
+    <nav class="module-nav" id="module-nav"></nav>
+
+  </main>
+
+  <footer class="site-footer">
+    <div>Full Stack Agentic AI Engineering · Module 2 · <a href="../index.html">Course home</a></div>
+  </footer>
+
+  <script src="../assets/js/progress.js"></script>
+  <script src="../assets/js/test-engine.js"></script>
+  <script src="../assets/js/nav.js"></script>
+  <script src="../assets/js/ui.js"></script>
+  <script src="../assets/js/walkthroughs.js"></script>
+  <script src="../assets/data/syllabus.js"></script>
+  <script>
+    renderSiteHeader('#site-header', '../');
+
+    window.WALKTHROUGHS['m2-react'] = {
+      frames: [
+        { title: '1. Thought 1 — first reasoning step', body: 'The agent reads the goal ("Resolve refund for #4821") and decides: "I need the order details first to check the refund policy." Notice it hasn\'t called any tool yet — this is pure reasoning.' },
+        { title: '2. Action 1 — first tool call', body: 'The agent picks the right tool from its toolkit and invokes it: lookup_order(id="4821"). The tool contract (name + description) is what let it pick correctly. No side effect on the world yet — this is read-only.' },
+        { title: '3. Observation 1 — tool result', body: 'The tool returns structured data: order date 2026-05-10, amount $200. The agent now has facts to reason over. This observation gets appended to the agent\'s context for the next iteration.' },
+        { title: '4. Thought 2 — second reasoning step', body: 'Armed with the order date, the agent reasons: "Order is 8 days old, within the 30-day refund window. Now I need to verify the damage report." Notice how Thought 2 directly builds on Observation 1 — this is what makes ReAct iterative.' },
+        { title: '5. Action 2 + Observation 2', body: 'lookup_damage(order="4821") returns 3 photos, severity high, reported 2026-05-15. The agent now has all the evidence it needs.' },
+        { title: '6. Final thought + action', body: 'The agent\'s last thought: "All criteria met — propose $200 refund." It calls propose_refund(...), which hands off to the HITL gate from Module 1. Two ReAct iterations were enough for this task. A budget of 10 max-iterations would catch a runaway loop if the agent ever got stuck.' }
+      ]
+    };
+
+    const TEST = {
+      moduleId: 'module-02',
+      mcqs: [
+        {
+          q: 'What does ReAct stand for?',
+          options: [
+            'Retrieve and Act',
+            'Reason and Act',
+            'React and Adjust',
+            'Recursive Action'
+          ],
+          correct: 1,
+          explain: 'ReAct = Reason + Act. The pattern interleaves reasoning (Thought) with action (tool call), then observation, and repeats. Yao et al. 2022 introduced it.'
+        },
+        {
+          q: 'You\'re building a customer support classifier that routes messages to one of 5 specialized paths (billing, technical, account, refund, sales). Which pattern fits best?',
+          options: [
+            'Supervisor-worker with 5 worker agents',
+            'Router — one classification step picks the path',
+            'Planner-executor with reflection',
+            'Peer multi-agent network'
+          ],
+          correct: 1,
+          explain: 'A router is the right pattern when intents are distinct and paths are clear. One classification call selects the lane, then a downstream handler runs. Multi-agent would be massive overkill.'
+        },
+        {
+          q: 'Which is the MOST common failure mode of a ReAct loop in production?',
+          options: [
+            'The LLM forgets the original goal',
+            'The loop runs forever without progress',
+            'Tools return wrong data types',
+            'The user interrupts mid-loop'
+          ],
+          correct: 1,
+          explain: 'ReAct loops can loop forever if the LLM keeps picking actions that don\'t make progress. Always set a max-iteration budget (typically 5–15) and have an escalation path when it\'s hit.'
+        },
+        {
+          q: 'When should you ADD reflection to an agent\'s output?',
+          options: [
+            'Always — it improves quality',
+            'Only when the baseline quality is unreliable and stakes are high enough to pay 2× cost',
+            'Only on routing decisions',
+            'Only when the user explicitly asks for it'
+          ],
+          correct: 1,
+          explain: 'Reflection doubles cost and latency per loop. It pays back only when (a) the baseline output isn\'t reliable enough and (b) stakes are high enough that catching the marginal mistake is worth 2× cost. Measure first.'
+        },
+        {
+          q: 'What\'s the most important field in a tool contract for the LLM to pick the right tool?',
+          options: [
+            'The function name',
+            'The input schema',
+            'The description (one-sentence what it does + when to use it)',
+            'The output schema'
+          ],
+          correct: 2,
+          explain: 'The description is the prompt — the LLM picks tools by reading names and descriptions. A clear "what it does + when to use it" sentence is more impactful than schema specs. Verb-first names help, but the description is decisive.'
+        },
+        {
+          q: 'When does Planner-Executor beat single-agent ReAct?',
+          options: [
+            'When tasks are very short and stateless',
+            'When you need to show a plan to users / auditors before executing, or when steps are dependent and parallelizable',
+            'When latency must be under 1 second',
+            'When you have only one tool available'
+          ],
+          correct: 1,
+          explain: 'Planning shines when (a) you want to show / approve the plan up front, or (b) steps are dependent and you can parallelize once planned. For short or single-step tasks, ReAct\'s one-step-at-a-time approach is simpler and cheaper.'
+        },
+        {
+          q: 'Why is "mark side effects" critical on tool contracts?',
+          options: [
+            'It improves LLM tool selection accuracy',
+            'It distinguishes safe-to-call-freely (read-only) tools from those that need HITL gating (write/destructive)',
+            'It documents the function for engineers',
+            'It enables idempotency'
+          ],
+          correct: 1,
+          explain: 'Side-effect flagging is the foundation of safe agent design: read-only tools the agent can call freely; write/destructive tools must route through HITL gates (Module 1). Without this flag, every tool call carries equal risk and you can\'t scale safety.'
+        },
+        {
+          q: 'You have a 30-step task where each step depends on the previous result. ReAct keeps making bad early choices that derail later steps. What should you try?',
+          options: [
+            'Add reflection on every step',
+            'Switch to planner-executor with reassessment after each step',
+            'Switch to supervisor-worker with 30 specialist agents',
+            'Increase the max-iteration budget'
+          ],
+          correct: 1,
+          explain: 'For multi-step dependent tasks, planner-executor lets the LLM see the whole chain up front and commit to a coherent plan. Reassessment after each step lets it re-plan if reality diverges. 30 specialist agents is over-engineering; reflection doesn\'t solve the planning gap.'
+        },
+        {
+          q: 'Which of these is NOT a primary design tradeoff in agent architecture?',
+          options: [
+            'Latency',
+            'Cost',
+            'Cleverness',
+            'Auditability'
+          ],
+          correct: 2,
+          explain: 'The four canonical tradeoffs are latency, cost, reliability, and auditability. "Cleverness" isn\'t a measurable axis — agents shouldn\'t be clever; they should be reliable, fast, cheap, and traceable.'
+        },
+        {
+          q: 'What does the "founder shortcut" rule say?',
+          options: [
+            'Always use multi-agent for maximum capability',
+            'Default to single ReAct unless you can justify in one sentence why it\'s insufficient',
+            'Use the most expensive model for accuracy',
+            'Add reflection to all outputs'
+          ],
+          correct: 1,
+          explain: 'Default to single-agent ReAct. Upgrade to more complex patterns only when you can justify the upgrade in one sentence. Going simple-to-complex is a refactor; going complex-to-simple is an admission you over-engineered.'
+        }
+      ],
+      scenarios: [
+        {
+          q: 'You\'re designing an agent that books complex multi-leg travel for executives. The agent needs to: gather preferences, search flights, search hotels, check calendar conflicts, send for approval, then book. Which pattern(s) do you use and where? Justify each choice.',
+          modelAnswer: 'Macro-architecture: Planner-Executor (with a HITL gate on the booking step). Justification: the work has many dependent steps where early choices (flight times) constrain later ones (hotel arrival), and the user will want to see/approve the plan before anything books.\n\nInner loop within each step: ReAct. The "search flights" step is itself iterative — query, observe results, refine criteria, query again. Each step uses ReAct with a max-iteration budget (8–10).\n\nReflection: yes, on the final itinerary summary before sending for approval. Stakes are high enough to justify the 2× cost on that single step.\n\nNOT supervisor-worker: the work doesn\'t decompose into truly different specialist roles — flights, hotels, calendar all share the same tooling. Multi-agent would add cost without benefit.\n\nHITL gates: hard gate on the final "book" step (irreversible $$$). Sample-audit on plan generation in the first few weeks of production to catch bad planning patterns.\n\nLogging: every Thought, every plan revision, every tool call result. Audit trail must reconstruct "why did it book flight X instead of Y."'
+        },
+        {
+          q: 'Your agent picks the wrong tool ~15% of the time. Engineers tell you "the LLM is confused." What\'s likely actually wrong, and how do you fix it without changing models?',
+          modelAnswer: 'The problem is almost certainly in the tool contracts, not the LLM. Three likely root causes:\n\n1. Vague or overlapping descriptions. Two tools sound like they\'d apply to similar inputs. Fix: rewrite descriptions to be mutually exclusive — "Use this for X. Do NOT use this if Y." Add explicit "when to use" clauses.\n\n2. Bad names. Generic names like getInfo() or queryData() force the LLM to guess. Fix: verb-first specific names — lookup_order_by_id, search_inventory_by_sku.\n\n3. Missing or loose input schemas. The LLM tries the wrong tool because the input it has matches multiple schemas loosely. Fix: tighten schemas — required fields, enums where possible, strict types.\n\nDiagnostic step before fixing: dump 50 wrong-tool cases and read the agent\'s Thought before each. The Thoughts will tell you exactly which descriptions are ambiguous. This usually reduces error rate from 15% to under 3% without touching the model.\n\nIf that doesn\'t fix it, the tool inventory itself may be wrong (missing the tool the agent actually needs, forcing it to misuse another).'
+        },
+        {
+          q: 'A founder pitches you their architecture: "5 specialized agents (researcher, analyst, writer, fact-checker, editor) all collaborating in a peer network with reflection on every output." It\'s for an internal weekly content tool. Critique honestly. What would you actually build?',
+          modelAnswer: 'Critique: this is over-engineered by 3-4 levels. Five symptoms:\n\n1. Peer network for sequential work — this should be supervisor-worker at most, not peer. Peer networks loop and deadlock; you don\'t need agents debating.\n\n2. Five specialists for content. Roles overlap (researcher ↔ analyst, writer ↔ editor). Two well-prompted agents would do the job.\n\n3. Reflection on every output. 2× cost on every step compounds — this is ~10× baseline cost. Reflection on the final draft only is plenty.\n\n4. Weekly internal tool. The stakes don\'t justify the engineering. Internal weekly content can fail occasionally — you\'ll catch issues on review anyway.\n\n5. Missing the real risk: hallucination in research. None of the agents do retrieval-grounded research, so the "fact-checker" is just another LLM guessing.\n\nWhat I\'d actually build:\n• Single planner-executor agent.\n• Plan: research → outline → draft → final.\n• ReAct inside each step.\n• RAG (Module 5) on the research step — actual evidence, not generated facts.\n• Reflection on the final draft only.\n• HITL gate before publishing.\n• Total: 1 agent, 4 tools, ~$0.30 per piece instead of ~$3. Reaches 90% of the value at 10% of the cost. Upgrade to 2 agents if and when the data shows it\'s needed.'
+        }
+      ]
+    };
+
+    renderTest(TEST, document.getElementById('test-container'));
+    renderModuleNav('module-02', '#module-nav');
+    initWalkthroughs();
+  </script>
+</body>
+</html>

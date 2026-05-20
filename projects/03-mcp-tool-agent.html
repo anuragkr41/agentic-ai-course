@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project 3 — MCP Tool-Augmented Agent · Agentic AI Course</title>
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/module.css">
+  <link rel="stylesheet" href="../assets/css/print.css">
+</head>
+<body>
+
+  <header class="site-header" id="site-header"></header>
+
+  <section class="module-hero">
+    <div class="module-hero__inner">
+      <div class="num">Project 3 · Portfolio</div>
+      <h1>MCP Tool-Augmented Agent</h1>
+      <p class="subtitle">An MCP server exposing safe, governed tools — usable by any compliant agent or framework. The pattern that ends "we re-implemented integrations for every framework."</p>
+      <div class="meta">
+        <span>Prerequisites: M2 · M8 · M9</span>
+        <span>·</span>
+        <span>Build time: 3–5 engineering weeks</span>
+      </div>
+    </div>
+  </section>
+
+  <main class="container">
+
+    <h2 id="problem">Problem statement</h2>
+    <p>
+      Across your product line, four agents (a customer support agent, an internal data agent, an SDR-assist agent, and a research copilot) all need to interact with the same underlying systems: Postgres for customer data, Slack for notifications, GitHub for issues, Stripe for refunds. Today, each agent re-implements those tool integrations in its own framework. Every new integration is N copies; every bug is duplicated N times; every security review is N reviews.
+    </p>
+
+    <h2 id="motivation">Why a founder builds this</h2>
+    <ul>
+      <li><strong>Reuse.</strong> Write each integration once as an MCP server; all four agents pick it up.</li>
+      <li><strong>Security review is single-source.</strong> Compliance reviews the MCP server once, not the integration in every agent.</li>
+      <li><strong>Framework independence.</strong> When you swap an agent\'s framework next quarter (LangGraph → Microsoft Agent Framework, or whatever), integrations are untouched.</li>
+      <li><strong>External distribution.</strong> An MCP server exposing your product\'s API becomes the way third-party agents (Claude Desktop, Cursor, anyone\'s custom agent) integrate with you. Distribution surface — not just internal tooling.</li>
+    </ul>
+
+    <h2 id="architecture">Architecture</h2>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 720 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MCP tool agent architecture">
+        <defs><marker id="p3-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#3D5AFE"/></marker></defs>
+
+        <rect x="20" y="20" width="160" height="40" rx="6" fill="#EDF0FF" stroke="#3D5AFE"/><text x="100" y="38" text-anchor="middle" font-size="10" font-weight="700">Support Agent</text><text x="100" y="52" text-anchor="middle" font-size="9">LangGraph</text>
+        <rect x="200" y="20" width="160" height="40" rx="6" fill="#EDF0FF" stroke="#3D5AFE"/><text x="280" y="38" text-anchor="middle" font-size="10" font-weight="700">Data Agent</text><text x="280" y="52" text-anchor="middle" font-size="9">Microsoft Agent Framework</text>
+        <rect x="380" y="20" width="160" height="40" rx="6" fill="#EDF0FF" stroke="#3D5AFE"/><text x="460" y="38" text-anchor="middle" font-size="10" font-weight="700">SDR Agent</text><text x="460" y="52" text-anchor="middle" font-size="9">CrewAI</text>
+        <rect x="560" y="20" width="140" height="40" rx="6" fill="#EDF0FF" stroke="#3D5AFE"/><text x="630" y="38" text-anchor="middle" font-size="10" font-weight="700">Research</text><text x="630" y="52" text-anchor="middle" font-size="9">Claude Desktop</text>
+
+        <line x1="100" y1="60" x2="200" y2="115" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#p3-arr)"/>
+        <line x1="280" y1="60" x2="280" y2="115" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#p3-arr)"/>
+        <line x1="460" y1="60" x2="360" y2="115" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#p3-arr)"/>
+        <line x1="630" y1="60" x2="440" y2="115" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#p3-arr)"/>
+
+        <rect x="120" y="120" width="480" height="44" rx="6" fill="#FFF1E0" stroke="#B85C00" stroke-width="2"/>
+        <text x="360" y="142" text-anchor="middle" font-size="12" font-weight="700">MCP Servers (your platform)</text>
+        <text x="360" y="158" text-anchor="middle" font-size="9">unified protocol · capability discovery · audit log · auth per server</text>
+
+        <line x1="200" y1="164" x2="120" y2="200" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#p3-arr)"/>
+        <line x1="320" y1="164" x2="320" y2="200" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#p3-arr)"/>
+        <line x1="440" y1="164" x2="520" y2="200" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#p3-arr)"/>
+
+        <rect x="40" y="205" width="170" height="80" rx="6" fill="#FFFFFF" stroke="#1A1A1A"/>
+        <text x="125" y="225" text-anchor="middle" font-size="10" font-weight="700">postgres-server</text>
+        <text x="125" y="241" text-anchor="middle" font-size="9">tools: query_view (SELECT)</text>
+        <text x="125" y="255" text-anchor="middle" font-size="9">scope: prod.* views only</text>
+        <text x="125" y="269" text-anchor="middle" font-size="9">auth: per-tenant API key</text>
+
+        <rect x="235" y="205" width="170" height="80" rx="6" fill="#FFFFFF" stroke="#1A1A1A"/>
+        <text x="320" y="225" text-anchor="middle" font-size="10" font-weight="700">slack-server</text>
+        <text x="320" y="241" text-anchor="middle" font-size="9">tools: post_message</text>
+        <text x="320" y="255" text-anchor="middle" font-size="9">scope: 3 allowlisted channels</text>
+        <text x="320" y="269" text-anchor="middle" font-size="9">auth: OAuth (bot scope)</text>
+
+        <rect x="430" y="205" width="170" height="80" rx="6" fill="#FFFFFF" stroke="#1A1A1A"/>
+        <text x="515" y="225" text-anchor="middle" font-size="10" font-weight="700">github-server</text>
+        <text x="515" y="241" text-anchor="middle" font-size="9">tools: search_issues, comment</text>
+        <text x="515" y="255" text-anchor="middle" font-size="9">scope: 2 repos</text>
+        <text x="515" y="269" text-anchor="middle" font-size="9">auth: GitHub App</text>
+
+        <rect x="620" y="205" width="80" height="80" rx="6" fill="#FAE7E9" stroke="#B23A48"/>
+        <text x="660" y="225" text-anchor="middle" font-size="10" font-weight="700">stripe-server</text>
+        <text x="660" y="241" text-anchor="middle" font-size="9">tool: refund</text>
+        <text x="660" y="255" text-anchor="middle" font-size="9">HITL required</text>
+        <text x="660" y="269" text-anchor="middle" font-size="9">idempotency keys</text>
+
+        <rect x="20" y="305" width="680" height="28" rx="6" fill="#F3F0E8" stroke="#7A7A7A"/>
+        <text x="360" y="324" text-anchor="middle" font-size="10" fill="#7A7A7A">UNIFIED AUDIT LOG: who called · which tool · input · output · timestamp · latency · HITL status</text>
+      </svg>
+      <figcaption>Four agents on four different frameworks → one MCP protocol → four MCP servers (each owning a clean integration). All security and audit at the server layer, not duplicated per agent.</figcaption>
+    </figure>
+
+    <h2 id="components">Component breakdown</h2>
+    <table class="compare-table">
+      <thead><tr><th>Component</th><th>Module(s)</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td>Tool contracts</td><td>M2, M8</td><td>Each tool: name, one-sentence description, strict input schema, output schema, side-effect flag. Discovery via MCP\'s tools/list.</td></tr>
+        <tr><td>postgres-server</td><td>M8, M12</td><td>SELECT-only via UC views; allowlist of view names; query parser rejects writes / non-allowlisted; LIMIT injected; dry-run cost cap.</td></tr>
+        <tr><td>slack-server</td><td>M8, M9</td><td>post_message scoped to 3 channels via allowlist; bot scope (not user-account scope); audit per call.</td></tr>
+        <tr><td>github-server</td><td>M8</td><td>search_issues (read), comment (write, HITL-gated). Scoped to 2 repos. GitHub App auth (revocable per server).</td></tr>
+        <tr><td>stripe-server</td><td>M8, M9</td><td>refund tool only. Idempotency keys mandatory. Hard HITL gate at agent layer + dollar threshold inside server. Read-only Stripe creds for everything else.</td></tr>
+        <tr><td>Authentication</td><td>M8, M9</td><td>Per-server credentials; least privilege; rotated automatically; central secret manager.</td></tr>
+        <tr><td>Audit log</td><td>M9, M10</td><td>Every call: identity, tool, input, output, ts, latency, HITL outcome. Tagged for cost/latency tracking in Langfuse.</td></tr>
+        <tr><td>Capability discovery</td><td>M8</td><td>Agents call tools/list on init; cache for the session. Server changes (new tool, new scope) ripple automatically.</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="tradeoffs">Design decisions you can defend</h2>
+    <ul>
+      <li><strong>MCP, not custom protocol.</strong> Open standard with multi-framework adoption (Anthropic, Microsoft, LangChain all support it). No vendor lock-in.</li>
+      <li><strong>Read-only default; writes added one tool at a time.</strong> postgres-server has no write tool, period. stripe-server has one write tool, with multiple gates.</li>
+      <li><strong>Allowlist scope per server.</strong> slack-server can only post to #support-internal, #cs-alerts, #refunds-approved. github-server only touches 2 repos. Views-only for postgres.</li>
+      <li><strong>Per-server credentials.</strong> Compromise of slack-server credentials doesn\'t cascade. Each server\'s blast radius is its own scope.</li>
+      <li><strong>HITL stays at the agent layer.</strong> MCP is transport. The agent decides when to gate. (Don\'t bury HITL inside a server — it makes the server reusable for non-HITL contexts.)</li>
+      <li><strong>Idempotency keys on every write tool.</strong> Refund key = case_id. Same key → no double-charge if any agent retries.</li>
+      <li><strong>Single audit log across all servers.</strong> Unified queryability for compliance.</li>
+    </ul>
+
+    <h2 id="failures">Failure modes &amp; mitigations</h2>
+    <table class="compare-table">
+      <thead><tr><th>Failure mode</th><th>Mitigation</th></tr></thead>
+      <tbody>
+        <tr><td>MCP server compromised</td><td>Per-server credentials limit blast radius. Audit log catches anomalous activity. Kill switch per server.</td></tr>
+        <tr><td>Prompt-injected agent tries unsafe call</td><td>Allowlist scope + server-side validation block it at the wire. Even if the LLM is fooled, the server refuses.</td></tr>
+        <tr><td>Server bug allows SQL injection</td><td>Parameterized queries; query parser validates SELECT-only + views-only; server pen-tested as a production service.</td></tr>
+        <tr><td>Agent loop calls same tool repeatedly</td><td>Per-agent rate limits at server layer; idempotency dedupes writes; cost monitoring alerts on spike.</td></tr>
+        <tr><td>Spec drift between MCP server and agent expectations</td><td>Tool contracts versioned; capability discovery on init; integration tests run on every server deploy.</td></tr>
+        <tr><td>MCP protocol changes in a way that breaks compatibility</td><td>Pin protocol version; track Anthropic releases; integration test suite gates upgrades.</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="interview">Interview / investor / customer talking points</h2>
+    <div class="resume-panel" style="margin-top: 0;">
+      <div class="qa"><div class="q">Q: Why MCP, not direct tool integration in each agent?</div><div class="a">A: Reuse and vendor independence. Without MCP, the same Postgres or Slack integration is duplicated across N agents — every bug and every security review is duplicated too. With MCP, we write each integration once. When we swap an agent\'s framework (this happens at least once a year), integrations are unaffected. And it\'s an open standard — Anthropic, Microsoft, and LangChain all support it.</div></div>
+      <div class="qa"><div class="q">Q: How do you stop an attacker who hijacks one MCP server from cascading?</div><div class="a">A: Per-server credentials. The slack-server\'s OAuth token only works for the 3 allowlisted channels; compromise gives the attacker nothing beyond that scope. The stripe-server is even more restricted. There is no global "MCP credential" — each server is independently authenticated, independently scoped, independently rotatable.</div></div>
+      <div class="qa"><div class="q">Q: What\'s the long-term play here beyond internal use?</div><div class="a">A: Distribution. The same MCP servers we use internally can be exposed to customers — they connect their own agents (Claude, Cursor, custom) to our platform via the same protocol. We become a node in the broader MCP ecosystem instead of one more SaaS API documented in a PDF. Strategic moat: developers prefer the open protocol over custom integrations.</div></div>
+      <div class="qa"><div class="q">Q: Why isn\'t HITL inside the server?</div><div class="a">A: Separation of concerns. The server\'s job is to expose a capability safely. HITL is a policy decision that depends on context (agent, user, query type) — that belongs at the agent layer. Burying HITL in the server makes the server unusable for legitimate non-HITL contexts (e.g., internal admin tooling).</div></div>
+    </div>
+
+    <h2 id="resume-bullets">Resume bullets for Project 3</h2>
+    <div class="resume-panel" style="margin-top: 0;">
+      <div class="resume-bullet" data-copy-text="Designed and deployed 4 production MCP servers (Postgres, Slack, GitHub, Stripe) exposing scoped, read-only-default tools to 4 different agent frameworks — replacing 16 duplicated integrations with 4 reusable services and unifying security review.">Designed and deployed 4 production MCP servers (Postgres, Slack, GitHub, Stripe) exposing scoped, read-only-default tools to 4 different agent frameworks — replacing 16 duplicated integrations with 4 reusable services and unifying security review.<button class="copy-btn">Copy</button></div>
+      <div class="resume-bullet" data-copy-text="Architected per-server authentication, scoped allowlists, idempotency keys, and unified audit logging — ensuring compromise of a single MCP server has bounded blast radius and that every tool call across the agent fleet is reconstructable for compliance.">Architected per-server authentication, scoped allowlists, idempotency keys, and unified audit logging — ensuring compromise of a single MCP server has bounded blast radius and that every tool call across the agent fleet is reconstructable for compliance.<button class="copy-btn">Copy</button></div>
+      <div class="resume-bullet" data-copy-text="Future-proofed the agent stack against framework churn — when frameworks change (LangGraph → Microsoft Agent Framework etc.), the underlying MCP-exposed integrations remain unchanged, saving estimated 6 engineering weeks per framework migration.">Future-proofed the agent stack against framework churn — when frameworks change (LangGraph → Microsoft Agent Framework etc.), the underlying MCP-exposed integrations remain unchanged, saving estimated 6 engineering weeks per framework migration.<button class="copy-btn">Copy</button></div>
+    </div>
+
+    <nav class="module-nav">
+      <a class="module-nav__btn" href="02-multi-agent-ops.html"><div class="dir">← Previous</div><div class="title">Project 2 — Multi-Agent Operations</div></a>
+      <a class="module-nav__btn module-nav__btn--next" href="04-databricks-ask-to-query.html"><div class="dir">Next project →</div><div class="title">Project 4 — Databricks Ask-to-Query</div></a>
+    </nav>
+  </main>
+
+  <footer class="site-footer"><div>Full Stack Agentic AI Engineering · Project 3 · <a href="../index.html">Course home</a></div></footer>
+
+  <script src="../assets/js/progress.js"></script>
+  <script src="../assets/js/nav.js"></script>
+  <script src="../assets/js/ui.js"></script>
+  <script src="../assets/data/syllabus.js"></script>
+  <script>renderSiteHeader('#site-header', '../');</script>
+</body>
+</html>

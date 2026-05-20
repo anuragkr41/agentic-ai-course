@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module 0 — Primer · Agentic AI Course</title>
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/module.css">
+  <link rel="stylesheet" href="../assets/css/print.css">
+</head>
+<body data-module-id="module-00">
+
+  <header class="site-header" id="site-header"></header>
+
+  <section class="module-hero">
+    <div class="module-hero__inner">
+      <div class="num">Module 0 · Optional</div>
+      <h1>Primer: Foundations for Non-Coders</h1>
+      <p class="subtitle">If you already know what an LLM, API, and JSON are, skip straight to Module 1.</p>
+      <div class="meta">
+        <span>⏱ ~15 min</span>
+        <span>·</span>
+        <span>5-question self-check (not gated)</span>
+      </div>
+    </div>
+  </section>
+
+  <main class="container">
+
+    <div class="callout">
+      <h4>Who this is for</h4>
+      <p>This course is built for non-coders. You don't need to write Python — but a few terms recur in every module. This 1,500-word primer gets you fluent in them. Skip if you're already comfortable.</p>
+    </div>
+
+    <div class="objectives">
+      <h4>You'll be able to</h4>
+      <ul>
+        <li>Explain what an LLM does in one sentence</li>
+        <li>Read an API call and understand request / response</li>
+        <li>Recognize JSON structure at a glance</li>
+        <li>Read a 10-line Python snippet and explain what it's doing</li>
+        <li>Use the glossary terms confidently in conversation</li>
+      </ul>
+    </div>
+
+    <div class="toc">
+      <h4>Table of contents</h4>
+      <ol>
+        <li><a href="#llm">What is an LLM?</a></li>
+        <li><a href="#api">What is an API?</a></li>
+        <li><a href="#json">What is JSON?</a></li>
+        <li><a href="#db">What is a database?</a></li>
+        <li><a href="#python">How to read a Python snippet</a></li>
+        <li><a href="#glossary">Glossary of recurring terms</a></li>
+      </ol>
+    </div>
+
+    <h2 id="llm" class="section-anchor">1. What is an LLM?</h2>
+    <p>
+      <strong>LLM</strong> stands for <em>Large Language Model</em>. The one-sentence version: <strong>an LLM is a program that takes text in and produces text out</strong>. Examples: ChatGPT, Claude, Gemini, Llama. They've been trained on enormous amounts of text from the internet, books, and code, and they've learned to predict what text should come next given any input.
+    </p>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 560 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LLM: text in, text out">
+        <defs>
+          <marker id="arr0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#3D5AFE"/>
+          </marker>
+        </defs>
+        <rect x="20" y="70" width="140" height="60" rx="8" fill="#EDF0FF" stroke="#3D5AFE" stroke-width="1.5"/>
+        <text x="90" y="98" text-anchor="middle" font-family="Georgia, serif" font-size="14" fill="#1A1A1A">"Summarize this</text>
+        <text x="90" y="116" text-anchor="middle" font-family="Georgia, serif" font-size="14" fill="#1A1A1A">contract in 3 bullets"</text>
+        <text x="90" y="55" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#7A7A7A">YOUR PROMPT (input)</text>
+
+        <line x1="170" y1="100" x2="220" y2="100" stroke="#3D5AFE" stroke-width="2" marker-end="url(#arr0)"/>
+
+        <rect x="230" y="60" width="120" height="80" rx="40" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.5"/>
+        <text x="290" y="95" text-anchor="middle" font-family="Georgia, serif" font-size="18" fill="#1A1A1A" font-weight="700">LLM</text>
+        <text x="290" y="115" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#7A7A7A">Claude · GPT · Gemini</text>
+
+        <line x1="360" y1="100" x2="410" y2="100" stroke="#3D5AFE" stroke-width="2" marker-end="url(#arr0)"/>
+
+        <rect x="420" y="70" width="120" height="60" rx="8" fill="#E6F4E6" stroke="#2E7D32" stroke-width="1.5"/>
+        <text x="480" y="92" text-anchor="middle" font-family="Georgia, serif" font-size="13" fill="#1A1A1A">"• 5-year term</text>
+        <text x="480" y="108" text-anchor="middle" font-family="Georgia, serif" font-size="13" fill="#1A1A1A">• Auto-renew</text>
+        <text x="480" y="124" text-anchor="middle" font-family="Georgia, serif" font-size="13" fill="#1A1A1A">• 30-day notice"</text>
+        <text x="480" y="55" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#7A7A7A">RESPONSE (output)</text>
+      </svg>
+      <figcaption>An LLM is a "text-in, text-out" engine. Everything else in this course is built around that.</figcaption>
+    </figure>
+
+    <p>Three things worth knowing now:</p>
+    <ul>
+      <li><strong>LLMs are stateless</strong> by default. They don't remember earlier conversations unless you re-send the history with each request. Memory is something you bolt on.</li>
+      <li><strong>LLMs hallucinate</strong>. They produce plausible-sounding text that may be factually wrong. A huge part of agentic AI is engineering systems that <em>force</em> the LLM to ground its answers in real data (covered deeply in Modules 5 and 7).</li>
+      <li><strong>LLMs are called via APIs</strong>. The model itself runs on someone else's servers (OpenAI, Anthropic, Google). Your program sends a request, pays per use, and gets a response. Which leads us to…</li>
+    </ul>
+
+    <h2 id="api" class="section-anchor">2. What is an API?</h2>
+    <p>
+      <strong>API</strong> stands for <em>Application Programming Interface</em>. Don't let the name throw you. The one-sentence version: <strong>an API is a way for one program to ask another program for something over the internet</strong>.
+    </p>
+    <p>
+      Whenever your app needs to <em>do</em> something it can't do alone — call an LLM, look up a stock price, send a Slack message, query a database — it calls an API.
+    </p>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 560 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="API call diagram">
+        <defs>
+          <marker id="arr1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#3D5AFE"/>
+          </marker>
+        </defs>
+
+        <rect x="20" y="60" width="160" height="100" rx="10" fill="#EDF0FF" stroke="#3D5AFE" stroke-width="1.5"/>
+        <text x="100" y="95" text-anchor="middle" font-family="Georgia, serif" font-size="15" fill="#1A1A1A" font-weight="700">Your App</text>
+        <text x="100" y="115" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#7A7A7A">(client)</text>
+        <text x="100" y="138" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#4A4A4A">e.g. your agent</text>
+
+        <path d="M180 90 L380 90" stroke="#3D5AFE" stroke-width="2" marker-end="url(#arr1)"/>
+        <text x="280" y="80" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#3D5AFE" font-weight="600">Request (JSON)</text>
+        <text x="280" y="105" text-anchor="middle" font-family="SF Mono, monospace" font-size="10" fill="#4A4A4A">POST /v1/chat</text>
+
+        <path d="M380 130 L180 130" stroke="#2E7D32" stroke-width="2" marker-end="url(#arr1)"/>
+        <text x="280" y="155" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#2E7D32" font-weight="600">Response (JSON)</text>
+
+        <rect x="380" y="60" width="160" height="100" rx="10" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.5"/>
+        <text x="460" y="95" text-anchor="middle" font-family="Georgia, serif" font-size="15" fill="#1A1A1A" font-weight="700">External Service</text>
+        <text x="460" y="115" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#7A7A7A">(server)</text>
+        <text x="460" y="138" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#4A4A4A">e.g. Anthropic API</text>
+      </svg>
+      <figcaption>A request goes out, a response comes back. Both are usually JSON (see next section).</figcaption>
+    </figure>
+
+    <p>
+      In agentic AI, almost every "tool" your agent uses is just an API call wrapped in a function. When Module 8 talks about "MCP servers exposing tools," it means: a standardized way to wire up these API calls so any agent can use them.
+    </p>
+
+    <h2 id="json" class="section-anchor">3. What is JSON?</h2>
+    <p>
+      <strong>JSON</strong> stands for <em>JavaScript Object Notation</em>. The one-sentence version: <strong>JSON is a text format for structured data — keys and values, like a dictionary</strong>.
+    </p>
+    <p>Here's the same person described in plain text and in JSON:</p>
+    <p><em>Plain text:</em> "Anurag is a founder. His tags are pm, founder, and engineer."</p>
+    <p><em>JSON:</em></p>
+    <pre><code>{
+  "name": "Anurag",
+  "role": "founder",
+  "tags": ["pm", "founder", "engineer"]
+}</code></pre>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 480 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="JSON structure tree">
+        <rect x="180" y="20" width="120" height="40" rx="6" fill="#EDF0FF" stroke="#3D5AFE" stroke-width="1.5"/>
+        <text x="240" y="45" text-anchor="middle" font-family="SF Mono, monospace" font-size="13" fill="#1A1A1A">{ object }</text>
+
+        <line x1="240" y1="60" x2="120" y2="100" stroke="#7A7A7A" stroke-width="1.2"/>
+        <line x1="240" y1="60" x2="240" y2="100" stroke="#7A7A7A" stroke-width="1.2"/>
+        <line x1="240" y1="60" x2="360" y2="100" stroke="#7A7A7A" stroke-width="1.2"/>
+
+        <rect x="50" y="100" width="140" height="36" rx="5" fill="#F3F0E8" stroke="#D9D5CC"/>
+        <text x="120" y="123" text-anchor="middle" font-family="SF Mono, monospace" font-size="12" fill="#1A1A1A">name: "Anurag"</text>
+
+        <rect x="170" y="100" width="140" height="36" rx="5" fill="#F3F0E8" stroke="#D9D5CC"/>
+        <text x="240" y="123" text-anchor="middle" font-family="SF Mono, monospace" font-size="12" fill="#1A1A1A">role: "founder"</text>
+
+        <rect x="290" y="100" width="140" height="36" rx="5" fill="#F3F0E8" stroke="#D9D5CC"/>
+        <text x="360" y="123" text-anchor="middle" font-family="SF Mono, monospace" font-size="12" fill="#1A1A1A">tags: [ list ]</text>
+
+        <line x1="360" y1="136" x2="300" y2="170" stroke="#7A7A7A" stroke-width="1.2"/>
+        <line x1="360" y1="136" x2="360" y2="170" stroke="#7A7A7A" stroke-width="1.2"/>
+        <line x1="360" y1="136" x2="420" y2="170" stroke="#7A7A7A" stroke-width="1.2"/>
+        <text x="300" y="183" text-anchor="middle" font-family="SF Mono, monospace" font-size="11" fill="#4A4A4A">"pm"</text>
+        <text x="360" y="183" text-anchor="middle" font-family="SF Mono, monospace" font-size="11" fill="#4A4A4A">"founder"</text>
+        <text x="420" y="183" text-anchor="middle" font-family="SF Mono, monospace" font-size="11" fill="#4A4A4A">"engineer"</text>
+      </svg>
+      <figcaption>A JSON object is a tree: keys on each branch, values (strings, numbers, lists, or more objects) at the leaves.</figcaption>
+    </figure>
+
+    <p>Three things matter for this course:</p>
+    <ul>
+      <li><strong>API requests and responses are JSON</strong>. When an agent calls a tool, what flies across the wire is JSON in, JSON out.</li>
+      <li><strong>"Structured output"</strong> means forcing the LLM to produce valid JSON (e.g. <code>{"refund_amount": 50.00, "reason": "shipping damage"}</code>) instead of free-form prose. This is huge for reliability — covered in Module 3.</li>
+      <li><strong>JSON has 6 value types</strong>: string ("hello"), number (42), boolean (true/false), null, list ([…]), and object ({…}). That's it.</li>
+    </ul>
+
+    <h2 id="db" class="section-anchor">4. What is a database?</h2>
+    <p>
+      A <strong>database</strong> is a structured place to store and retrieve data. Two flavors come up repeatedly:
+    </p>
+    <ul>
+      <li><strong>Relational DB (SQL):</strong> data stored in tables with columns and rows, like spreadsheets that can reference each other. Queried with <em>SQL</em>. Module 12 builds a Text-to-SQL agent.</li>
+      <li><strong>Vector DB:</strong> stores <em>embeddings</em> — numeric fingerprints of text that let you search by meaning rather than exact words. ("Find docs about <em>refund policy</em>" matches a doc that says <em>"returns and reimbursements"</em>.) Modules 3, 5, and 7 use these.</li>
+    </ul>
+    <p>You'll also meet <strong>knowledge graphs</strong> (Modules 6 and 7) — data stored as <em>nodes</em> (entities like People, Companies, Documents) connected by <em>relationships</em> (works-at, mentioned-in). Think LinkedIn under the hood.</p>
+
+    <h2 id="python" class="section-anchor">5. How to read a Python snippet</h2>
+    <p>
+      You won't write Python — but every module shows short Python snippets to illustrate concepts. The good news: Python reads close to English. Here's everything you need to follow along.
+    </p>
+
+    <h4>The 6 patterns you'll see again and again</h4>
+    <pre><code># 1. A comment — Python ignores everything after #
+# 2. Assignment: name = value
+prompt = "Summarize this contract"
+
+# 3. Function call: function_name(arguments)
+response = llm.invoke(prompt)
+
+# 4. Method call: object.method(arguments)
+text = response.content.strip()
+
+# 5. A list (square brackets) and a dict (curly braces)
+docs = ["doc1.pdf", "doc2.pdf"]
+config = {"model": "claude-opus-4-7", "temperature": 0.2}
+
+# 6. if / for — control flow
+for doc in docs:
+    if doc.endswith(".pdf"):
+        process(doc)</code></pre>
+
+    <p>When you see something like:</p>
+    <pre><code>from langchain_anthropic import ChatAnthropic
+llm = ChatAnthropic(model="claude-opus-4-7")
+result = llm.invoke("What is agentic AI?")
+print(result.content)</code></pre>
+    <p>Read it as: "Pull the <code>ChatAnthropic</code> tool out of the LangChain library. Make an LLM client using the Opus model. Ask it 'What is agentic AI?'. Print whatever it says back." That's the entire mental model.</p>
+
+    <div class="callout callout--success">
+      <h4>Survival rule</h4>
+      <p>If you don't understand a line in a snippet, ask: <em>what does this line accomplish?</em> — not <em>what does this exact syntax mean?</em> The goal is reading comprehension, not authorship.</p>
+    </div>
+
+    <h2 id="glossary" class="section-anchor">6. Glossary of recurring terms</h2>
+    <table class="compare-table">
+      <thead><tr><th>Term</th><th>One-line meaning</th></tr></thead>
+      <tbody>
+        <tr><td>LLM</td><td>Text-in, text-out model (Claude, GPT, Gemini).</td></tr>
+        <tr><td>Prompt</td><td>The text you send to the LLM.</td></tr>
+        <tr><td>Token</td><td>The unit LLMs charge by — roughly a word fragment. ~4 characters.</td></tr>
+        <tr><td>Context window</td><td>How much text the LLM can read at once. Bigger = more expensive.</td></tr>
+        <tr><td>API</td><td>One program asks another for something over the internet.</td></tr>
+        <tr><td>JSON</td><td>Text format for structured data — keys, values, lists.</td></tr>
+        <tr><td>Schema</td><td>The shape a piece of data must take (e.g. "must have a <em>name</em> and an <em>email</em>").</td></tr>
+        <tr><td>Agent</td><td>A program that uses an LLM + tools to pursue a goal autonomously.</td></tr>
+        <tr><td>Tool</td><td>A function the agent can call (e.g. <code>send_email</code>, <code>query_db</code>).</td></tr>
+        <tr><td>RAG</td><td>Retrieval-Augmented Generation. Find relevant docs → feed them to the LLM → get grounded answer.</td></tr>
+        <tr><td>Embedding</td><td>A numeric fingerprint of a piece of text. Two similar texts have similar embeddings.</td></tr>
+        <tr><td>Vector DB</td><td>A database that searches by embedding similarity (meaning), not exact text match.</td></tr>
+        <tr><td>HITL</td><td>Human-In-The-Loop. The system pauses for a human to approve before doing something risky.</td></tr>
+        <tr><td>Hallucination</td><td>When the LLM produces plausible-sounding but false output.</td></tr>
+        <tr><td>Groundedness</td><td>Whether the LLM's answer is actually supported by the source documents you gave it.</td></tr>
+        <tr><td>Guardrails</td><td>Rules that block dangerous inputs or outputs (e.g. "never reveal secrets," "never send to an external email").</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <h4>You're ready</h4>
+      <p>Every module re-explains what it needs. The terms above just save you from looking them up mid-flow. If anything in Module 1 confuses you, come back here.</p>
+    </div>
+
+    <!-- Self-check -->
+    <section id="test-container"></section>
+
+    <nav class="module-nav" id="module-nav"></nav>
+
+  </main>
+
+  <footer class="site-footer">
+    <div>Full Stack Agentic AI Engineering · Module 0 · <a href="../index.html">Course home</a></div>
+  </footer>
+
+  <script src="../assets/js/progress.js"></script>
+  <script src="../assets/js/test-engine.js"></script>
+  <script src="../assets/js/nav.js"></script>
+  <script src="../assets/js/ui.js"></script>
+  <script src="../assets/data/syllabus.js"></script>
+  <script>
+    renderSiteHeader('#site-header', '../');
+
+    const TEST = {
+      moduleId: 'module-00',
+      mcqs: [
+        {
+          q: 'What does an LLM fundamentally do?',
+          options: [
+            'Trains itself on new data with every conversation',
+            'Takes text in and produces text out',
+            'Stores and queries structured data',
+            'Sends messages to humans for approval'
+          ],
+          correct: 1,
+          explain: 'An LLM is a text-in, text-out engine. Everything else (memory, tools, agents) is engineered on top.'
+        },
+        {
+          q: 'Why is an LLM described as "stateless" by default?',
+          options: [
+            'It produces output randomly each time',
+            'It cannot connect to any external systems',
+            'It does not remember earlier turns unless you re-send them',
+            'It can only handle one user at a time'
+          ],
+          correct: 2,
+          explain: 'Stateless means no built-in memory across calls. To give an LLM "memory," you must re-send relevant history in each request — or wire up an external memory store.'
+        },
+        {
+          q: 'Which best describes JSON?',
+          options: [
+            'A programming language for AI agents',
+            'A database engine for storing embeddings',
+            'A text format made of keys and values (and lists / nested objects)',
+            'A network protocol for calling APIs'
+          ],
+          correct: 2,
+          explain: 'JSON is just a way to write structured data as text. Almost every API request and response in this course is JSON.'
+        },
+        {
+          q: 'When the course mentions "structured output," what does it mean?',
+          options: [
+            'The LLM organizes its prose into paragraphs',
+            'The LLM produces output that matches a defined schema (e.g. valid JSON with required fields)',
+            'The LLM writes longer responses with headers',
+            'The system stores the output in a relational database'
+          ],
+          correct: 1,
+          explain: 'Structured output forces the LLM to return data in a predictable shape (like JSON matching a schema) instead of free-form text. This is what makes agents reliable.'
+        },
+        {
+          q: 'In the snippet `result = llm.invoke("What is agentic AI?")`, what is `llm.invoke` doing?',
+          options: [
+            'Defining a new variable called invoke',
+            'Calling a method on the llm object to send the prompt and get a response',
+            'Importing the LangChain library',
+            'Asking the user a question via the terminal'
+          ],
+          correct: 1,
+          explain: 'The dot means "call this method on this object." So `llm.invoke(...)` is asking the LLM client to run the prompt and return a result. The result is stored in the variable `result`.'
+        }
+      ],
+      scenarios: []
+    };
+
+    renderTest(TEST, document.getElementById('test-container'), { title: 'Self-Check (not gated)', optional: true });
+    renderModuleNav('module-00', '#module-nav');
+  </script>
+</body>
+</html>

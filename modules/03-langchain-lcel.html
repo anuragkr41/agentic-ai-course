@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module 3 — LangChain & LCEL · Agentic AI Course</title>
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/module.css">
+  <link rel="stylesheet" href="../assets/css/print.css">
+</head>
+<body data-module-id="module-03">
+
+  <header class="site-header" id="site-header"></header>
+
+  <section class="module-hero">
+    <div class="module-hero__inner">
+      <div class="num">Module 3</div>
+      <h1>LangChain & LCEL — Production Pipelines</h1>
+      <p class="subtitle">The toolkit your team will actually code against. Document loaders, splitters, embeddings, vector stores, and the composition language that ties them together.</p>
+      <div class="meta">
+        <span>⏱ ~85 min (incl. videos)</span>
+        <span>·</span>
+        <span>3 curated videos + 1 walkthrough</span>
+        <span>·</span>
+        <span>10 MCQs + 3 scenarios · ≥80% to unlock M4</span>
+      </div>
+    </div>
+  </section>
+
+  <main class="container">
+
+    <h2 id="why">Why this matters</h2>
+    <p>
+      LangChain is the most adopted open-source toolkit for building LLM-powered apps. Even teams that ultimately move off it use its vocabulary. As a founder, you need to know what LangChain <em>provides</em>, what it doesn't, and how to read an LCEL pipeline at a glance — because every agent your team builds will start as one.
+    </p>
+    <p>
+      The hard part isn't writing LangChain code. The hard part is making it reliable in production: structured outputs that don't break, retries that don't loop, validation that catches bad data before it hits a customer. That's where most projects fail. This module teaches you to brief your team away from that fate.
+    </p>
+
+    <div class="objectives">
+      <h4>You'll be able to</h4>
+      <ul>
+        <li>Map the LangChain stack: loaders → splitters → embeddings → vector stores → retrievers → LLM</li>
+        <li>Read and write LCEL (LangChain Expression Language) at a glance</li>
+        <li>Insist on structured outputs (schema-first JSON) and explain why free-form text breaks production</li>
+        <li>Spec reliability layers: validation, retries, fallbacks, circuit breakers</li>
+        <li>Pick a deployment pattern (API service, batch, embedded)</li>
+      </ul>
+    </div>
+
+    <div class="toc">
+      <h4>Table of contents</h4>
+      <ol>
+        <li><a href="#stack">The LangChain stack at a glance</a></li>
+        <li><a href="#ingestion">Document loaders &amp; text splitting</a></li>
+        <li><a href="#embeddings">Embeddings &amp; vector stores</a></li>
+        <li><a href="#lcel">LCEL — composition language</a></li>
+        <li><a href="#structured">Structured outputs (schema-first)</a></li>
+        <li><a href="#reliability">Reliability: validation, retries, fallbacks</a></li>
+        <li><a href="#deploy">Deployment patterns</a></li>
+        <li><a href="#books">Books &amp; deeper reading</a></li>
+        <li><a href="#resume">Founder skills + resume panel</a></li>
+        <li><a href="#test">Module test</a></li>
+      </ol>
+    </div>
+
+    <h2 id="stack" class="section-anchor">1. The LangChain stack at a glance</h2>
+    <p>
+      LangChain isn't one thing — it's a toolkit of components plus a composition language (LCEL). The components are normalized wrappers around common building blocks: LLM clients, prompt templates, document loaders, splitters, embedders, vector stores, retrievers, output parsers, tools.
+    </p>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 700 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LangChain stack">
+        <defs>
+          <marker id="m3-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#3D5AFE"/></marker>
+        </defs>
+        <rect x="30" y="20" width="640" height="38" rx="6" fill="#EDF0FF" stroke="#3D5AFE" stroke-width="1.5"/>
+        <text x="350" y="44" text-anchor="middle" font-family="Georgia, serif" font-size="14" fill="#1A1A1A" font-weight="700">Your application (LCEL pipeline)</text>
+
+        <line x1="350" y1="58" x2="350" y2="78" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#m3-arr)"/>
+
+        <rect x="30" y="80" width="140" height="60" rx="6" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.5"/>
+        <text x="100" y="100" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#7A7A7A">PROMPT</text>
+        <text x="100" y="118" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#1A1A1A">Templates</text>
+        <text x="100" y="132" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#4A4A4A">+ structured input</text>
+
+        <rect x="190" y="80" width="140" height="60" rx="6" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.5"/>
+        <text x="260" y="100" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#7A7A7A">MODEL</text>
+        <text x="260" y="118" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#1A1A1A">LLM clients</text>
+        <text x="260" y="132" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#4A4A4A">OpenAI, Anthropic…</text>
+
+        <rect x="350" y="80" width="140" height="60" rx="6" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.5"/>
+        <text x="420" y="100" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#7A7A7A">OUTPUT</text>
+        <text x="420" y="118" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#1A1A1A">Parsers</text>
+        <text x="420" y="132" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#4A4A4A">JSON, schemas</text>
+
+        <rect x="510" y="80" width="160" height="60" rx="6" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.5"/>
+        <text x="590" y="100" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#7A7A7A">TOOLS</text>
+        <text x="590" y="118" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#1A1A1A">Function calls</text>
+        <text x="590" y="132" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#4A4A4A">+ retrievers</text>
+
+        <rect x="30" y="170" width="640" height="46" rx="6" fill="#F3F0E8" stroke="#7A7A7A" stroke-width="1.5"/>
+        <text x="350" y="187" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#7A7A7A" font-weight="700">DATA LAYER</text>
+        <text x="350" y="205" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="#1A1A1A">Document loaders · Text splitters · Embeddings · Vector stores · Retrievers</text>
+
+        <rect x="30" y="228" width="640" height="38" rx="6" fill="#E6F4E6" stroke="#2E7D32" stroke-width="1.5"/>
+        <text x="350" y="252" text-anchor="middle" font-family="Georgia, serif" font-size="13" fill="#1A1A1A" font-weight="700">External: vector DBs, SQL DBs, APIs</text>
+      </svg>
+      <figcaption>The LangChain stack. Most production agents use 4–6 components glued by LCEL.</figcaption>
+    </figure>
+
+    <h2 id="ingestion" class="section-anchor">2. Document loaders &amp; text splitting</h2>
+    <p>
+      Step one of any RAG system: get your documents into structured chunks the model can search. LangChain has <strong>loaders</strong> for ~200 formats (PDF, DOCX, HTML, S3, Notion, Google Drive, Confluence, etc.) — they all return the same <code>Document</code> type with text + metadata.
+    </p>
+    <p>
+      Then <strong>splitters</strong> chunk those documents. Wrong chunk size = bad retrieval; this is the #1 cause of underwhelming RAG. Three strategies:
+    </p>
+    <ul>
+      <li><strong>Fixed-size (character or token).</strong> Simple, fast, loses semantic boundaries. Use 500–1500 token chunks with 10–20% overlap.</li>
+      <li><strong>Recursive character.</strong> Tries paragraphs → sentences → words. Default for most prose. The LangChain default.</li>
+      <li><strong>Semantic.</strong> Splits where meaning shifts (uses an embedder). Slower but best retrieval. Use for high-value corpora.</li>
+    </ul>
+    <p>Founder rule: if your retrieval is bad, fix chunking first. Try 3 chunk sizes and measure recall before blaming the model.</p>
+
+    <h2 id="embeddings" class="section-anchor">3. Embeddings &amp; vector stores</h2>
+    <p>
+      An <strong>embedding</strong> turns text into a numeric vector. Texts with similar meaning have similar vectors. A <strong>vector store</strong> indexes those vectors so you can search by similarity.
+    </p>
+    <p>The decisions you actually make:</p>
+    <ul>
+      <li><strong>Embedder.</strong> OpenAI <code>text-embedding-3-large</code> (highest quality), Cohere, Voyage, or local models. Pick one and don't switch lightly — re-embedding your whole corpus is slow and expensive.</li>
+      <li><strong>Vector store.</strong> <strong>Pinecone</strong> (managed), <strong>Chroma</strong> (local/dev), <strong>Weaviate</strong>, <strong>Qdrant</strong> (open-source), or use your existing DB — <strong>Postgres + pgvector</strong> works fine for ≤10M vectors and ships with most cloud DBs.</li>
+      <li><strong>Hybrid search.</strong> Combine vector similarity with keyword (BM25) search. Materially better than vector alone — the "RAG is dead" video below explains why.</li>
+    </ul>
+
+    <figure class="video-embed">
+      <div class="video-embed__frame">
+        <iframe src="https://www.youtube.com/embed/eg2Tp1bjJnU"
+                title="Use Azure AI models in your LangChain agent — Microsoft"
+                loading="lazy" allowfullscreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+      </div>
+      <figcaption>
+        <span class="video-embed__meta">Watch · Microsoft · NASDAQ: MSFT</span>
+        <strong>Use Azure AI models in your LangChain agent</strong>
+        Microsoft's official walkthrough of plugging Azure-hosted models into a LangChain pipeline. Pay attention to how identical the LangChain interface is across providers — that's the value of the abstraction.
+        <br><a class="video-embed__yt-link" href="https://www.youtube.com/watch?v=eg2Tp1bjJnU" target="_blank" rel="noopener">Open on YouTube ↗</a>
+      </figcaption>
+    </figure>
+
+    <h2 id="lcel" class="section-anchor">4. LCEL — composition language</h2>
+    <p>
+      <strong>LCEL (LangChain Expression Language)</strong> is how you wire components together. The big idea: every component is a <em>Runnable</em>; you pipe them with <code>|</code> (Python's bitwise-or operator, overloaded).
+    </p>
+    <pre><code>chain = prompt | llm | output_parser
+result = chain.invoke({"question": "What is our refund policy?"})</code></pre>
+    <p>Read left-to-right: input flows into <code>prompt</code>, the rendered prompt goes to <code>llm</code>, the LLM's response goes to <code>output_parser</code>. Each pipe is a Runnable boundary.</p>
+    <p>What LCEL gives you for free:</p>
+    <ul>
+      <li><strong>Streaming.</strong> Tokens stream through the chain — you can show partial results in UI.</li>
+      <li><strong>Batching.</strong> Run the same chain on 100 inputs in parallel with one call.</li>
+      <li><strong>Async.</strong> Non-blocking, scales with your API server.</li>
+      <li><strong>Retries.</strong> Built-in retry config per Runnable.</li>
+      <li><strong>Tracing.</strong> Every Runnable boundary is a trace span — observability nearly free (Module 10).</li>
+    </ul>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 700 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LCEL pipeline">
+        <defs>
+          <marker id="m3-arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#3D5AFE"/></marker>
+        </defs>
+        <rect x="20" y="60" width="120" height="60" rx="8" fill="#F3F0E8" stroke="#7A7A7A"/>
+        <text x="80" y="85" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#7A7A7A">INPUT</text>
+        <text x="80" y="103" text-anchor="middle" font-family="SF Mono, monospace" font-size="10" fill="#1A1A1A">{"question": ...}</text>
+        <line x1="140" y1="90" x2="170" y2="90" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#m3-arr2)"/>
+
+        <rect x="175" y="60" width="110" height="60" rx="8" fill="#EDF0FF" stroke="#3D5AFE" stroke-width="1.5"/>
+        <text x="230" y="83" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#3D5AFE" font-weight="700">PROMPT</text>
+        <text x="230" y="100" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#4A4A4A">template fills</text>
+        <line x1="285" y1="90" x2="315" y2="90" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#m3-arr2)"/>
+
+        <rect x="320" y="60" width="110" height="60" rx="8" fill="#EDF0FF" stroke="#3D5AFE" stroke-width="1.5"/>
+        <text x="375" y="83" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#3D5AFE" font-weight="700">LLM</text>
+        <text x="375" y="100" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#4A4A4A">model call</text>
+        <line x1="430" y1="90" x2="460" y2="90" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#m3-arr2)"/>
+
+        <rect x="465" y="60" width="110" height="60" rx="8" fill="#EDF0FF" stroke="#3D5AFE" stroke-width="1.5"/>
+        <text x="520" y="83" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#3D5AFE" font-weight="700">PARSER</text>
+        <text x="520" y="100" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#4A4A4A">JSON/schema</text>
+        <line x1="575" y1="90" x2="605" y2="90" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#m3-arr2)"/>
+
+        <rect x="610" y="60" width="80" height="60" rx="8" fill="#E6F4E6" stroke="#2E7D32" stroke-width="1.5"/>
+        <text x="650" y="85" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#2E7D32" font-weight="700">OUTPUT</text>
+        <text x="650" y="103" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#4A4A4A">typed object</text>
+
+        <text x="350" y="155" text-anchor="middle" font-family="SF Mono, monospace" font-size="13" fill="#1A1A1A">chain = prompt | llm | parser</text>
+        <text x="350" y="175" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#7A7A7A" font-style="italic">Read left-to-right. Each | is a Runnable boundary — traceable, retryable, streamable.</text>
+      </svg>
+      <figcaption>LCEL pipeline. Each pipe (<code>|</code>) is a Runnable boundary — that's where streaming, retries, and traces hook in.</figcaption>
+    </figure>
+
+    <h2 id="structured" class="section-anchor">5. Structured outputs (schema-first)</h2>
+    <p>
+      <strong>This is the single most important practice in this module.</strong> Force every LLM call to produce output matching a schema. Free-form text breaks production; schema-validated JSON survives.
+    </p>
+    <pre><code>from pydantic import BaseModel
+
+class RefundDecision(BaseModel):
+    qualifies: bool
+    amount: float
+    reason: str
+    confidence: float
+
+chain = prompt | llm.with_structured_output(RefundDecision)
+result: RefundDecision = chain.invoke({"case": case_data})
+# result.qualifies, result.amount, etc. — typed, validated, no parsing</code></pre>
+    <p>Why this matters for founders:</p>
+    <ul>
+      <li><strong>Downstream code stops breaking.</strong> If <code>result.amount</code> is always a float, your accounting service can rely on it.</li>
+      <li><strong>Validation is the guardrail.</strong> Schema rejects malformed output before it touches a database or customer.</li>
+      <li><strong>Evals get easier.</strong> Schema-typed outputs are auto-comparable; you can check exact correctness, not just "did the LLM say roughly the right thing."</li>
+    </ul>
+
+    <figure class="video-embed">
+      <div class="video-embed__frame">
+        <iframe src="https://www.youtube.com/embed/lz7Xg_RqEoE"
+                title="Azure AI Search: RAG for better results, larger scale, faster answers — Microsoft"
+                loading="lazy" allowfullscreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+      </div>
+      <figcaption>
+        <span class="video-embed__meta">Watch · Microsoft · NASDAQ: MSFT</span>
+        <strong>Azure AI Search: RAG for better results, larger scale, faster answers</strong>
+        Microsoft's Ignite session on the retrieval side of LangChain pipelines — vector + hybrid search at scale. Even if you use Pinecone or pgvector, the architectural choices Microsoft outlines (chunking, hybrid, reranking) generalize.
+        <br><a class="video-embed__yt-link" href="https://www.youtube.com/watch?v=lz7Xg_RqEoE" target="_blank" rel="noopener">Open on YouTube ↗</a>
+      </figcaption>
+    </figure>
+
+    <h2 id="reliability" class="section-anchor">6. Reliability: validation, retries, fallbacks</h2>
+    <p>Three layers protect a production LCEL chain:</p>
+    <ol>
+      <li><strong>Schema validation</strong> (above). Reject malformed outputs.</li>
+      <li><strong>Retries with backoff.</strong> If the LLM fails schema or returns an error, retry up to N times. <code>chain.with_retry(stop_after_attempt=3)</code>.</li>
+      <li><strong>Fallbacks.</strong> If the primary LLM fails repeatedly, fall back to a cheaper/different model. <code>primary.with_fallbacks([secondary])</code>.</li>
+    </ol>
+    <p>What this looks like end-to-end:</p>
+    <pre><code>primary = ChatAnthropic(model="claude-opus-4-7").with_structured_output(RefundDecision)
+secondary = ChatOpenAI(model="gpt-4o").with_structured_output(RefundDecision)
+
+reliable_chain = (
+    prompt
+    | primary.with_fallbacks([secondary]).with_retry(stop_after_attempt=3)
+)</code></pre>
+    <p>Founder takeaway: insist your team adds these three layers to every <em>customer-facing</em> chain. Internal-only tools can skip the fallback if cost matters.</p>
+
+    <h2 id="deploy" class="section-anchor">7. Deployment patterns</h2>
+    <p>Three patterns. Pick by use case:</p>
+    <ul>
+      <li><strong>API service.</strong> Wrap your chain in a FastAPI / Express endpoint. <strong>LangServe</strong> auto-generates this for any chain. Use for real-time use cases.</li>
+      <li><strong>Batch / scheduled.</strong> Run the chain over a list of inputs on a cron schedule. Use for nightly reports, bulk classification.</li>
+      <li><strong>Embedded.</strong> Run the chain inside another app (e.g., a Slack bot, a CRM plugin). Use when you don't need a standalone service.</li>
+    </ul>
+
+    <div class="walkthrough" data-walkthrough-id="m3-lcel">
+      <div class="walkthrough__header">
+        <h4 class="walkthrough__title">▷ Step through: a RAG pipeline from documents to answer</h4>
+        <span class="walkthrough__subtitle">6 steps · the canonical LangChain flow</span>
+      </div>
+      <div class="walkthrough__viewport">
+        <svg viewBox="0 0 700 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="RAG pipeline walkthrough">
+          <defs>
+            <marker id="wt-m3-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#3D5AFE"/></marker>
+          </defs>
+          <g data-wf="1,2,3,4,5,6"><rect x="20" y="40" width="120" height="48" rx="6" fill="#F3F0E8" stroke="#7A7A7A"/><text x="80" y="60" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#7A7A7A">DOCS</text><text x="80" y="76" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#1A1A1A">PDFs, web pages</text></g>
+          <g data-wf="2,3,4,5,6"><line x1="140" y1="64" x2="165" y2="64" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#wt-m3-arr)"/><rect x="170" y="40" width="120" height="48" rx="6" fill="#EDF0FF" stroke="#3D5AFE" stroke-width="1.5"/><text x="230" y="60" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#3D5AFE">SPLITTER</text><text x="230" y="76" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#1A1A1A">~800 tok chunks</text></g>
+          <g data-wf="3,4,5,6"><line x1="290" y1="64" x2="315" y2="64" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#wt-m3-arr)"/><rect x="320" y="40" width="120" height="48" rx="6" fill="#EDF0FF" stroke="#3D5AFE" stroke-width="1.5"/><text x="380" y="60" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#3D5AFE">EMBEDDER</text><text x="380" y="76" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#1A1A1A">→ vectors</text></g>
+          <g data-wf="4,5,6"><line x1="440" y1="64" x2="465" y2="64" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#wt-m3-arr)"/><rect x="470" y="40" width="140" height="48" rx="6" fill="#F3F0E8" stroke="#7A7A7A"/><text x="540" y="60" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#7A7A7A">VECTOR STORE</text><text x="540" y="76" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#1A1A1A">Pinecone / pgvector</text></g>
+
+          <g data-wf="5,6"><rect x="20" y="130" width="200" height="48" rx="6" fill="#F3F0E8" stroke="#7A7A7A"/><text x="120" y="150" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#7A7A7A">USER QUERY</text><text x="120" y="166" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#1A1A1A">"Refund policy?"</text></g>
+          <g data-wf="5,6"><line x1="220" y1="154" x2="245" y2="154" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#wt-m3-arr)"/><rect x="250" y="130" width="160" height="48" rx="6" fill="#EDF0FF" stroke="#3D5AFE" stroke-width="1.5"/><text x="330" y="150" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#3D5AFE">RETRIEVER</text><text x="330" y="166" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#1A1A1A">top-k similar chunks</text></g>
+          <g data-wf="6"><line x1="410" y1="154" x2="435" y2="154" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#wt-m3-arr)"/><rect x="440" y="130" width="170" height="48" rx="6" fill="#EDF0FF" stroke="#3D5AFE" stroke-width="2"/><text x="525" y="150" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#3D5AFE">LLM + STRUCTURED OUTPUT</text><text x="525" y="166" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#1A1A1A">cite + answer</text></g>
+          <g data-wf="6"><rect x="200" y="220" width="320" height="48" rx="6" fill="#E6F4E6" stroke="#2E7D32" stroke-width="1.5"/><text x="360" y="240" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#2E7D32">ANSWER</text><text x="360" y="256" text-anchor="middle" font-family="SF Mono, monospace" font-size="10" fill="#1A1A1A">{ answer, citations[], confidence }</text></g>
+        </svg>
+      </div>
+      <div class="walkthrough__caption">
+        <h4 class="walkthrough__step-title"></h4>
+        <p class="walkthrough__step-body"></p>
+      </div>
+      <div class="walkthrough__controls">
+        <button class="walkthrough__nav-btn" data-action="prev">←</button>
+        <span class="walkthrough__step-indicator"></span>
+        <button class="walkthrough__nav-btn" data-action="next">→</button>
+        <button class="walkthrough__play-btn" data-action="play">▶ Play</button>
+      </div>
+    </div>
+
+    <figure class="video-embed">
+      <div class="video-embed__frame">
+        <iframe src="https://www.youtube.com/embed/h7pwxFSD_Rc"
+                title="LangChain Runnables & LCEL Full Guide"
+                loading="lazy" allowfullscreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+      </div>
+      <figcaption>
+        <span class="video-embed__meta">Watch · Concept-focused · Feb 2026</span>
+        <strong>LangChain Runnables &amp; LCEL Full Guide — Structuring AI Workflows</strong>
+        A focused 2026 walkthrough of the Runnable abstraction and how LCEL composes them. The clearest visual explanation of streaming, batching, and parallel sub-chains. Watch with a pause-button.
+        <br><a class="video-embed__yt-link" href="https://www.youtube.com/watch?v=h7pwxFSD_Rc" target="_blank" rel="noopener">Open on YouTube ↗</a>
+      </figcaption>
+    </figure>
+
+    <!-- Books -->
+    <section class="books-section section-anchor" id="books">
+      <h2>📚 Books &amp; Deeper Reading</h2>
+      <p>For LangChain specifically, the docs are the canonical source — code changes faster than books. Use these as your reference.</p>
+      <div class="books-grid">
+        <div class="book-card"><h4>LangChain official docs</h4><div class="author">LangChain Inc.</div><div class="why">The only "book" you need for syntax. Start with "LCEL" and "Retrieval" sections.</div><div class="meta meta--free">Free · <a href="https://python.langchain.com/" target="_blank" rel="noopener">python.langchain.com ↗</a></div></div>
+        <div class="book-card"><h4>Building LLM Powered Applications</h4><div class="author">Valentina Alto · Packt · 2024</div><div class="why">Chapters 4–8 are pure LangChain practice. Pair with the docs.</div><div class="meta">Paid · ~340 pp</div></div>
+        <div class="book-card"><h4>AI Engineering — Ch. 4 "Retrieval"</h4><div class="author">Chip Huyen · O'Reilly · 2024</div><div class="why">The non-LangChain-specific take on RAG. Helps you separate "LangChain decisions" from "RAG decisions."</div><div class="meta">Paid · ~40 pp</div></div>
+        <div class="book-card"><h4>LangChain Academy</h4><div class="author">LangChain · free courses</div><div class="why">Official free courses. "Introduction to LangChain" is the right starting point for your team.</div><div class="meta meta--free">Free · <a href="https://academy.langchain.com/" target="_blank" rel="noopener">academy.langchain.com ↗</a></div></div>
+      </div>
+    </section>
+
+    <!-- Founder + resume -->
+    <section id="resume" class="resume-panel section-anchor">
+      <h2>🚀 What You Can Now Build (and Claim)</h2>
+      <h3>What you can now design end-to-end</h3>
+      <ul style="margin: 0 0 1.25rem 0.4rem; padding-left: 1.1rem;">
+        <li>Spec a LangChain pipeline using the right components: loaders, splitters, embedders, vector stores, retrievers, LLM, parser.</li>
+        <li>Insist on schema-first structured outputs everywhere — the single biggest reliability win.</li>
+        <li>Add the three reliability layers (validation, retries, fallbacks) to any customer-facing chain.</li>
+        <li>Pick a deployment pattern (API / batch / embedded) and tell your team what to build first.</li>
+        <li>Debug "RAG isn't working" by checking chunking, embedder choice, and retrieval-vs-generation tradeoff — in that order.</li>
+      </ul>
+      <h3>Resume bullets you can defend</h3>
+      <div class="resume-bullet" data-copy-text="Designed LangChain LCEL pipelines for production document ingestion, retrieval, and structured output extraction — covering loaders, splitters, embedders, vector stores, and the full Runnable composition.">Designed LangChain LCEL pipelines for production document ingestion, retrieval, and structured output extraction — covering loaders, splitters, embedders, vector stores, and the full Runnable composition.<button class="copy-btn">Copy</button></div>
+      <div class="resume-bullet" data-copy-text="Enforced schema-first structured outputs (Pydantic) on every LLM call, eliminating downstream parsing failures and enabling automated evaluation of agent correctness.">Enforced schema-first structured outputs (Pydantic) on every LLM call, eliminating downstream parsing failures and enabling automated evaluation of agent correctness.<button class="copy-btn">Copy</button></div>
+      <div class="resume-bullet" data-copy-text="Implemented production reliability layers (schema validation, retry-with-backoff, multi-provider fallbacks) across LangChain chains, raising customer-facing success rate from baseline to >95%.">Implemented production reliability layers (schema validation, retry-with-backoff, multi-provider fallbacks) across LangChain chains, raising customer-facing success rate from baseline to &gt;95%.<button class="copy-btn">Copy</button></div>
+      <h3>Likely interview / investor / hiring questions</h3>
+      <div class="qa"><div class="q">Q: How would you make a LangChain pipeline production-reliable?</div><div class="a">A: Three layers. (1) Schema-validated structured outputs — no free-form JSON. (2) Retries with backoff on transient failures. (3) Fallbacks to a secondary provider when the primary fails repeatedly. On top, instrument LCEL traces so I can see exactly which Runnable failed when something breaks.</div></div>
+      <div class="qa"><div class="q">Q: Our RAG retrieval is bad. Where do you look first?</div><div class="a">A: Chunking, almost always. Try three chunk sizes (500, 1000, 1500 tokens) and measure retrieval recall on a labeled set. Second look: hybrid search — adding BM25 alongside vector usually adds 10–20 points. Third: reranker on top-50 results. Only after these is the embedder or model worth touching.</div></div>
+      <div class="qa"><div class="q">Q: When wouldn't you use LangChain?</div><div class="a">A: When the task is a single LLM call with no retrieval, no tools, no chaining — LangChain is overhead. When the team has Go/Rust/Java only and Python isn't on the table — use that stack's native LLM SDK. When vendor lock-in is unacceptable and you'd rather code directly against OpenAI/Anthropic SDKs to keep dependencies minimal.</div></div>
+    </section>
+
+    <section id="test" class="section-anchor"><div id="test-container"></div></section>
+    <nav class="module-nav" id="module-nav"></nav>
+  </main>
+
+  <footer class="site-footer"><div>Full Stack Agentic AI Engineering · Module 3 · <a href="../index.html">Course home</a></div></footer>
+
+  <script src="../assets/js/progress.js"></script>
+  <script src="../assets/js/test-engine.js"></script>
+  <script src="../assets/js/nav.js"></script>
+  <script src="../assets/js/ui.js"></script>
+  <script src="../assets/js/walkthroughs.js"></script>
+  <script src="../assets/data/syllabus.js"></script>
+  <script>
+    renderSiteHeader('#site-header', '../');
+
+    window.WALKTHROUGHS['m3-lcel'] = {
+      frames: [
+        { title: '1. Documents — your knowledge corpus', body: 'Start with the documents your agent needs to know about: policy PDFs, product docs, prior tickets, internal wiki. LangChain has loaders for ~200 formats — they all output the same Document type with text + metadata.' },
+        { title: '2. Splitter — chunk into searchable pieces', body: 'Documents get chunked. Wrong chunk size = bad retrieval (the #1 cause of weak RAG). Typical: 500–1500 token chunks with 10–20% overlap. Try 3 sizes and measure recall before blaming the model.' },
+        { title: '3. Embedder — turn chunks into vectors', body: 'Each chunk becomes a numeric vector via an embedding model (text-embedding-3-large, Cohere, etc.). Texts with similar meaning have similar vectors. Embedding the whole corpus is an offline one-time cost.' },
+        { title: '4. Vector store — index for fast similarity search', body: 'The vectors land in a vector store: Pinecone (managed), Chroma (dev), Postgres+pgvector (works for ≤10M vectors). This is your "memory" — the corpus is now searchable by meaning, not just keywords.' },
+        { title: '5. Retriever — find relevant chunks for a query', body: 'When a user asks a question, the query gets embedded the same way, and the retriever returns the top-k most similar chunks. Add hybrid search (BM25 + vector) and a reranker for a typical 15-20 point recall boost.' },
+        { title: '6. LLM + structured output — answer with citations', body: 'The retrieved chunks + user query feed into the LLM via a prompt. The LLM produces a schema-validated answer: { answer, citations[], confidence }. Citations let users verify; schema validation prevents downstream breakage. This is the canonical RAG flow.' }
+      ]
+    };
+
+    const TEST = {
+      moduleId: 'module-03',
+      mcqs: [
+        { q: 'In LCEL, what does the pipe operator (|) do?', options: ['Logical OR between conditions', 'Composes Runnables into a sequential chain (output of one becomes input of next)', 'Imports a module', 'Splits text into chunks'], correct: 1, explain: 'LCEL overloads | to chain Runnables. output_of_left becomes input_of_right. Each | is a traceable, retryable boundary.' },
+        { q: 'Why use structured outputs (e.g., Pydantic) instead of free-form text?', options: ['Faster LLM response', 'Schema validates types, eliminates parsing failures, makes evals automatable', 'Reduces token cost', 'Bypasses prompt engineering'], correct: 1, explain: 'Schema-validated outputs are the single biggest reliability win. Free-form text breaks; typed/validated JSON survives production.' },
+        { q: 'Your RAG retrieval is underwhelming. What should you fix first?', options: ['Switch to a larger LLM', 'Try 3 different chunk sizes and measure recall', 'Re-embed with a different model', 'Add reflection on the output'], correct: 1, explain: 'Chunking is the #1 cause of weak RAG. Always tune chunk size first; switching models comes after.' },
+        { q: 'What does .with_fallbacks([secondary]) do in LCEL?', options: ['Retries the same model N times', 'Routes failed calls to an alternate model/provider', 'Logs errors for debugging', 'Caches responses'], correct: 1, explain: 'Fallbacks route to another runnable when the primary fails. Common pattern: primary on Claude, fallback to GPT, if the Anthropic API has an outage.' },
+        { q: 'Which is NOT a typical LangChain component?', options: ['Document loader', 'Text splitter', 'Compiler', 'Embedder'], correct: 2, explain: 'No "compiler" component. Standard kit: loaders, splitters, embedders, vector stores, retrievers, prompts, LLMs, parsers, tools.' },
+        { q: 'When does hybrid search (vector + BM25) help most?', options: ['When the corpus is small (<100 docs)', 'When queries contain specific keywords that exact-match matters (e.g., product codes, names)', 'When the LLM is small', 'When you have no vector DB'], correct: 1, explain: 'Pure vector search misses exact-match cases. Hybrid (vector + BM25 keyword) captures both semantic and lexical signals — typical +15 to +20 points on recall.' },
+        { q: 'Which deployment pattern fits "wrap chain as REST endpoint for real-time queries"?', options: ['Batch', 'API service (e.g., LangServe + FastAPI)', 'Embedded', 'Notebook'], correct: 1, explain: 'API service = wrap chain behind HTTP. LangServe auto-generates this. Batch is for scheduled bulk; embedded is inside another app.' },
+        { q: 'Why is re-embedding your corpus expensive?', options: ['Embedders are slow to deploy', 'You pay per-token for every chunk; corpora can be millions of chunks', 'Vector stores require restart', 'It needs GPU'], correct: 1, explain: 'Embedding cost scales with corpus size. Re-embedding a 10M-chunk corpus on a cheap embedder still costs hundreds. Pick embedder carefully and avoid switching.' },
+        { q: 'What does a LangChain Runnable give you "for free"?', options: ['Streaming, batching, async, retries, traces', 'A fine-tuned model', 'A vector database', 'GPU acceleration'], correct: 0, explain: 'Every Runnable boundary supports streaming, batching, async, retries, and tracing. This is the value of the abstraction.' },
+        { q: 'For a B2B SaaS handling customer-facing queries, which reliability stack would you require?', options: ['No special handling — LLMs are accurate enough', 'Schema validation + retries + multi-provider fallbacks', 'Just retries', 'Manual review of every response'], correct: 1, explain: 'Customer-facing = full stack: validate every output, retry transient failures, fallback to another provider when primary fails. Internal-only tools can skip the fallback.' }
+      ],
+      scenarios: [
+        { q: 'A teammate proposes "let\'s just call the LLM directly without LangChain — we don\'t need the abstraction." For a 5-person team building a customer support agent with 8 different tools, document retrieval, and structured outputs, what would you advise?', modelAnswer: 'I\'d push back. LangChain (or an equivalent: LlamaIndex, Microsoft Agent Framework) earns its keep when you have any of: multiple tools, retrieval, structured outputs, retries, traces, multi-provider fallbacks. You have all five.\n\nDirect SDK use means rebuilding all of that ourselves. The "no abstraction" version of this app is 3000+ lines of glue code that we\'ll be maintaining instead of shipping features.\n\nWhen direct SDK is right: single-call apps with no retrieval/tools/parsing — e.g., "summarize this paragraph." Or when the team is non-Python and bringing in LangChain isn\'t worth the language switch. Neither applies here.\n\nThe abstraction tax is real but small. The hand-rolled tax is huge and compounds. Use LangChain.' },
+        { q: 'Your RAG agent returns confidently wrong answers about pricing. The team blames hallucination. Walk through your debugging steps.', modelAnswer: 'Hallucination is the symptom, not the cause. Likely root causes in order:\n\n1. Bad retrieval — the right pricing doc isn\'t in the top-k. Check by manually feeding the question to retrieval and inspecting the chunks. If the right chunk is missing, fix chunking (try smaller chunks, add hybrid search, add a reranker).\n\n2. Right chunk retrieved but stale data — the doc in the corpus shows last quarter\'s pricing. Fix: refresh corpus on a schedule; track doc dates in metadata; weight recency in retrieval.\n\n3. Right chunk + right data + the LLM ignores it. Fix: prompt the LLM to cite specifically — "for each price you state, quote the source chunk." Force structured output with a `citations` field. If it can\'t cite, it must say "I don\'t know."\n\n4. Only after all three: model upgrade or fine-tune.\n\nTotal time-to-diagnose: usually 30 minutes with proper retrieval logs. "Hallucination" without retrieval logs is a guess.' },
+        { q: 'You need to process 50,000 incoming support tickets per day, classify each, draft a response, route to the right team. Latency SLA is "within 5 minutes per ticket." Design the LangChain pipeline.', modelAnswer: 'Architecture: batch-mode LangChain pipeline, not real-time API.\n\nFlow:\n• Trigger: webhook on new ticket → enqueue to a job queue (e.g., SQS).\n• Worker: pulls jobs in batches of 50 (LangChain batch mode), runs them in parallel async.\n• Chain: prompt | llm.with_structured_output(TicketDecision).with_retry(3).with_fallbacks([cheaper_model]) | route_action.\n• TicketDecision schema: { category, priority, draft_response, route_to, confidence }.\n• Route action: writes to DB; sends to the team queue; if confidence < 0.7, route to human triage instead.\n\nReliability stack:\n• Schema validation rejects any malformed output.\n• Retry-with-backoff on transient model failures.\n• Fallback model (cheaper, e.g., Haiku) when primary repeatedly fails.\n• Idempotency key per ticket (so retries don\'t double-route).\n\nCost: ~$0.01 per ticket on a mid-tier model = $500/day for 50k. Acceptable for the use case.\n\nLatency: 5-min SLA is generous. Batch mode trades small batch latency for throughput; well within SLA.\n\nObservability: every Runnable boundary traced (Module 10). Daily eval slice on confidence < 0.7 cases.' }
+      ]
+    };
+
+    renderTest(TEST, document.getElementById('test-container'));
+    renderModuleNav('module-03', '#module-nav');
+    initWalkthroughs();
+  </script>
+</body>
+</html>

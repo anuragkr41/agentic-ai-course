@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Full Stack Agentic AI Engineering — Course</title>
+  <meta name="description" content="A 12-module course on building and deploying production-grade AI agents — frameworks, RAG, knowledge graphs, MCP, guardrails, evals, and portfolio projects.">
+  <link rel="stylesheet" href="assets/css/base.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="stylesheet" href="assets/css/module.css">
+  <link rel="stylesheet" href="assets/css/print.css">
+</head>
+<body>
+  <header class="site-header" id="site-header"></header>
+
+  <main class="container-wide">
+
+    <section style="text-align: center; margin: 1rem 0 2.5rem;">
+      <div style="color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.82rem;">For founders · Self-paced · No coding required</div>
+      <h1 style="font-size: 2.6rem; margin: 0.45rem auto 0.5rem; max-width: 22ch;">Full Stack Agentic AI Engineering</h1>
+      <p style="font-size: 1.1rem; color: var(--ink-soft); max-width: 62ch; margin: 0 auto 1.25rem;">
+        Theory + practice for founders building agentic products end-to-end. Curated videos from the people actually shipping this stuff, plus interactive walkthroughs, recommended books, and 5 portfolio projects you can defend to investors, customers, and hires.
+      </p>
+      <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+        <a class="btn" href="modules/01-essentials.html">Start Module 1 →</a>
+        <a class="btn btn--ghost" href="modules/00-primer.html">Optional: Primer first</a>
+      </div>
+    </section>
+
+    <section class="card" id="progress-summary" style="display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap;">
+      <div style="flex: 1; min-width: 220px;">
+        <h3 style="margin-top: 0; margin-bottom: 0.4rem; font-family: var(--font-sans); font-size: 1rem;">Your progress</h3>
+        <div id="progress-text" style="color: var(--ink-soft); font-size: 0.92rem;">Loading…</div>
+        <div class="progress-bar" style="margin-top: 0.6rem;">
+          <div class="progress-bar__fill" id="progress-fill"></div>
+        </div>
+      </div>
+      <div>
+        <button class="btn btn--ghost" onclick="CourseProgress.reset()" style="font-size: 0.85rem; padding: 0.5em 1em;">Reset progress</button>
+      </div>
+    </section>
+
+    <!-- Certificate section -->
+    <section class="card section-anchor" id="certificate-card" style="margin-top: 1.25rem; padding: 1.5rem 1.75rem;">
+      <div style="display: flex; gap: 1.25rem; align-items: center; flex-wrap: wrap;">
+        <div style="font-size: 2.5rem; line-height: 1;">🏆</div>
+        <div style="flex: 1; min-width: 220px;">
+          <h3 style="margin-top: 0; margin-bottom: 0.35rem; font-family: var(--font-sans); font-size: 1.05rem;">Pictu-e-Learning Completion Certificate</h3>
+          <div id="cert-status" style="color: var(--ink-soft); font-size: 0.93rem;">Loading…</div>
+        </div>
+        <div>
+          <a class="btn" id="cert-btn" href="resume/certificate.html">Generate certificate</a>
+        </div>
+      </div>
+    </section>
+
+    <h2 style="margin-top: 2.5rem;">Course Modules</h2>
+    <p style="color: var(--ink-soft); margin-bottom: 1rem;">
+      All modules are open — study in any order. <strong>Pass every module test (≥80%)</strong> to unlock your completion certificate. The optional primer below is for non-coders who want to ground the basics first.
+    </p>
+    <div class="module-grid" id="module-grid"></div>
+
+    <h2 style="margin-top: 2.5rem;">Portfolio Projects</h2>
+    <p style="color: var(--ink-soft); margin-bottom: 1rem;">
+      Five interview-ready system designs. Each lists its prerequisite module — read it after that module for maximum context.
+    </p>
+    <div class="module-grid" id="project-grid"></div>
+
+    <h2 style="margin-top: 2.5rem;">Resume & Interview Kit</h2>
+    <p style="color: var(--ink-soft); margin-bottom: 1rem;">
+      Consolidated resume bullets, project descriptions, and an interview question bank — drawn from every module.
+    </p>
+    <div class="module-grid">
+      <a class="module-card" href="resume/index.html">
+        <div class="num">Resume Kit</div>
+        <h3>Master resume, projects, cover letter</h3>
+        <div class="desc">Copy-paste resume bullets per topic, STAR-format project descriptions, printable resume layout.</div>
+        <div class="meta"><span>Built after all modules</span><span>→</span></div>
+      </a>
+      <a class="module-card" href="resume/interview-bank.html">
+        <div class="num">Interview Bank</div>
+        <h3>60–80 questions with model answers</h3>
+        <div class="desc">Organized by topic and project. Includes "red flag answers" to avoid and how to defend tradeoffs.</div>
+        <div class="meta"><span>Built after all modules</span><span>→</span></div>
+      </a>
+    </div>
+
+    <section class="callout" style="margin-top: 3rem;">
+      <h4>How this course works</h4>
+      <p style="margin: 0; font-size: 0.95rem;">
+        Each module: read the anchor text → watch the curated videos → step through the interactive walkthroughs → answer 10 MCQs + 2–3 scenarios → aim for ≥80% on every test.
+        Modules are open in any order — but a Pictu-e-Learning <strong>completion certificate</strong> is awarded only after every required module test is passed.
+        Progress is saved locally in this browser (no account needed); best score per module is kept.
+      </p>
+    </section>
+
+    <section class="callout" style="margin-top: 1rem;">
+      <h4>📺 About the videos</h4>
+      <p style="margin: 0; font-size: 0.93rem;">
+        Each module embeds curated YouTube videos as <strong>click-to-watch thumbnails</strong> — click any thumbnail to open the video on YouTube in a new tab. This pattern works universally (no iframe embedding restrictions, no local server needed). Page stays fast; videos play wherever YouTube plays.
+      </p>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <div>Full Stack Agentic AI Engineering · Built for self-study · Progress saved locally</div>
+  </footer>
+
+  <script src="assets/js/progress.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script src="assets/js/ui.js"></script>
+  <script src="assets/data/syllabus.js"></script>
+  <script>
+    // Render header
+    renderSiteHeader('#site-header', '');
+
+    // Render module grid (all open — pass each test to count toward the certificate)
+    (function () {
+      const grid = document.getElementById('module-grid');
+      let html = '';
+      window.SYLLABUS.forEach(function (m) {
+        const status = CourseProgress.getStatus(m.id);
+        let badge = '';
+        if (m.optional) badge = '<span class="badge">Optional</span>';
+        else if (status.passed) badge = '<span class="badge badge--success">✓ ' + status.score + '%</span>';
+        else if (status.attempted) badge = '<span class="badge badge--warn">' + status.score + '% · retake</span>';
+        else badge = '<span class="badge badge--accent">Open</span>';
+
+        html += '<a class="module-card" href="modules/' + m.file + '">';
+        html += '<div class="num">Module ' + m.num + '</div>';
+        html += '<h3>' + m.title + '</h3>';
+        html += '<div class="desc">' + m.description + '</div>';
+        html += '<div class="meta"><span>' + m.est + '</span>' + badge + '</div>';
+        html += '</a>';
+      });
+      grid.innerHTML = html;
+    })();
+
+    // Render project grid (all open — prerequisite is shown as informational)
+    (function () {
+      const grid = document.getElementById('project-grid');
+      let html = '';
+      window.PROJECTS.forEach(function (p) {
+        const reqStatus = CourseProgress.getStatus(p.unlock);
+        const unlockMod = window.SYLLABUS.find(function (m) { return m.id === p.unlock; });
+        const reqLabel = 'Best after M' + (unlockMod ? unlockMod.num : '?');
+        const badge = reqStatus.passed
+          ? '<span class="badge badge--success">✓ ' + reqLabel + '</span>'
+          : '<span class="badge">' + reqLabel + '</span>';
+        html += '<a class="module-card" href="projects/' + p.file + '">';
+        html += '<div class="num">Project ' + p.num + '</div>';
+        html += '<h3>' + p.title + '</h3>';
+        html += '<div class="desc">' + p.description + '</div>';
+        html += '<div class="meta"><span>' + p.tags.join(' · ') + '</span>' + badge + '</div>';
+        html += '</a>';
+      });
+      grid.innerHTML = html;
+    })();
+
+    // Render progress summary
+    (function () {
+      const summary = CourseProgress.overall(window.SYLLABUS);
+      document.getElementById('progress-text').textContent =
+        summary.passed + ' of ' + summary.total + ' module tests passed (' + summary.pct + '%)';
+      document.getElementById('progress-fill').style.width = summary.pct + '%';
+    })();
+
+    // Render certificate status
+    (function () {
+      const summary = CourseProgress.overall(window.SYLLABUS);
+      const allPassed = CourseProgress.allRequiredPassed(window.SYLLABUS);
+      const certStatus = document.getElementById('cert-status');
+      const certBtn = document.getElementById('cert-btn');
+      if (allPassed) {
+        certStatus.innerHTML = '<strong style="color: var(--success);">✓ All ' + summary.total + ' module tests passed.</strong> Click to enter your name and download your certificate as a PDF.';
+        certBtn.textContent = '🏆 Generate certificate';
+      } else {
+        const remaining = summary.total - summary.passed;
+        certStatus.innerHTML = '<strong>' + summary.passed + ' / ' + summary.total + ' module tests passed.</strong> Pass ' + remaining + ' more to unlock your Pictu-e-Learning completion certificate.';
+        certBtn.textContent = 'Locked — ' + remaining + ' to go';
+        certBtn.style.opacity = '0.55';
+        certBtn.style.pointerEvents = 'none';
+        certBtn.setAttribute('aria-disabled', 'true');
+      }
+    })();
+  </script>
+</body>
+</html>

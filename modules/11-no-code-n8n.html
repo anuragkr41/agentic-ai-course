@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module 11 — No-Code Agents (n8n) · Agentic AI Course</title>
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/module.css">
+  <link rel="stylesheet" href="../assets/css/print.css">
+</head>
+<body data-module-id="module-11">
+
+  <header class="site-header" id="site-header"></header>
+
+  <section class="module-hero">
+    <div class="module-hero__inner">
+      <div class="num">Module 11</div>
+      <h1>No-Code Agentic Workflows — n8n</h1>
+      <p class="subtitle">When code is overkill. Build, deploy, and govern AI workflows with triggers, integrations, and approvals — visually.</p>
+      <div class="meta"><span>⏱ ~60 min · 3 videos + 1 walkthrough · 10 MCQs + 3 scenarios · ≥80% to unlock M12</span></div>
+    </div>
+  </section>
+
+  <main class="container">
+
+    <h2 id="why">Why this matters</h2>
+    <p>
+      Not every agentic workflow needs to be a Python pipeline. A founder who wants to automate "when a deal closes in HubSpot, draft a welcome email, post to Slack, and create a Notion page" can do that in n8n in an afternoon — no engineering ticket needed. The lesson isn't "n8n replaces engineering." It's <strong>most internal automations should start in a no-code tool. Promote to code only when complexity demands it.</strong>
+    </p>
+
+    <div class="objectives">
+      <h4>You'll be able to</h4>
+      <ul>
+        <li>Decide when to use no-code (n8n) vs. coded (LangGraph)</li>
+        <li>Build a multi-step workflow with triggers, conditions, and approvals</li>
+        <li>Integrate AI nodes (LLM calls) into business workflows</li>
+        <li>Apply the same safety patterns from Modules 1 and 9 (HITL, allowlists) in no-code</li>
+        <li>Brief non-technical teammates on how to ship their own workflows safely</li>
+      </ul>
+    </div>
+
+    <div class="toc">
+      <h4>Table of contents</h4>
+      <ol>
+        <li><a href="#when">When no-code fits (and when it doesn't)</a></li>
+        <li><a href="#triggers">Triggers &amp; actions</a></li>
+        <li><a href="#approvals">Approvals in workflows</a></li>
+        <li><a href="#integrations">Integrations</a></li>
+        <li><a href="#audit">Audit logs &amp; governance</a></li>
+        <li><a href="#security">Security considerations</a></li>
+        <li><a href="#books">Resources &amp; deeper reading</a></li>
+        <li><a href="#resume">Founder skills + resume panel</a></li>
+        <li><a href="#test">Module test</a></li>
+      </ol>
+    </div>
+
+    <h2 id="when" class="section-anchor">1. When no-code fits</h2>
+    <table class="compare-table">
+      <thead><tr><th>Use no-code (n8n) when</th><th>Use code (LangGraph etc.) when</th></tr></thead>
+      <tbody>
+        <tr><td>Workflow is mostly business glue: trigger A → call B → notify C</td><td>Logic is complex: branching, loops, stateful reasoning</td></tr>
+        <tr><td>Non-engineers will own and maintain it</td><td>Engineers will own it; needs code review</td></tr>
+        <tr><td>Integrations to common SaaS (Slack, Notion, HubSpot, GMail)</td><td>Custom internal systems with no n8n connector</td></tr>
+        <tr><td>You\'re prototyping</td><td>You\'ve validated and need scale / SLAs</td></tr>
+        <tr><td>Volume is moderate (hundreds-thousands per day)</td><td>Volume is high (10k+ per day) or latency-critical</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="triggers" class="section-anchor">2. Triggers &amp; actions</h2>
+    <p>An n8n workflow is a graph: nodes are <strong>actions</strong> (do something), edges are <strong>connections</strong> (data flowing from one to the next). The first node is a <strong>trigger</strong> — the thing that kicks the workflow off.</p>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 700 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="n8n workflow">
+        <defs><marker id="m11-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#3D5AFE"/></marker></defs>
+        <rect x="20" y="80" width="110" height="50" rx="6" fill="#FFF1E0" stroke="#B85C00"/><text x="75" y="100" text-anchor="middle" font-size="10" font-weight="700">TRIGGER</text><text x="75" y="115" text-anchor="middle" font-size="9">HubSpot deal closed</text>
+        <line x1="130" y1="105" x2="155" y2="105" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#m11-arr)"/>
+        <rect x="160" y="80" width="100" height="50" rx="6" fill="#EDF0FF" stroke="#3D5AFE"/><text x="210" y="100" text-anchor="middle" font-size="10" font-weight="700">LLM</text><text x="210" y="115" text-anchor="middle" font-size="9">draft welcome</text>
+        <line x1="260" y1="105" x2="285" y2="105" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#m11-arr)"/>
+        <polygon points="290,80 350,105 290,130 270,105" fill="#FFF1E0" stroke="#B85C00"/><text x="310" y="103" text-anchor="middle" font-size="10" font-weight="700">approve?</text><text x="310" y="116" text-anchor="middle" font-size="9">to founder</text>
+        <line x1="350" y1="95" x2="395" y2="60" stroke="#2E7D32" stroke-width="1.5" marker-end="url(#m11-arr)"/>
+        <text x="370" y="80" text-anchor="middle" font-size="9" fill="#2E7D32">yes</text>
+        <line x1="350" y1="115" x2="395" y2="150" stroke="#B23A48" stroke-width="1.5" marker-end="url(#m11-arr)"/>
+        <text x="370" y="140" text-anchor="middle" font-size="9" fill="#B23A48">no</text>
+        <rect x="400" y="35" width="120" height="50" rx="6" fill="#FFFFFF" stroke="#1A1A1A"/><text x="460" y="55" text-anchor="middle" font-size="10" font-weight="700">SEND EMAIL</text><text x="460" y="70" text-anchor="middle" font-size="9">via Gmail</text>
+        <line x1="520" y1="60" x2="555" y2="60" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#m11-arr)"/>
+        <rect x="560" y="35" width="120" height="50" rx="6" fill="#FFFFFF" stroke="#1A1A1A"/><text x="620" y="55" text-anchor="middle" font-size="10" font-weight="700">POST SLACK</text><text x="620" y="70" text-anchor="middle" font-size="9">#new-customers</text>
+        <rect x="400" y="125" width="120" height="50" rx="6" fill="#FAE7E9" stroke="#B23A48"/><text x="460" y="145" text-anchor="middle" font-size="10" font-weight="700">SKIP</text><text x="460" y="160" text-anchor="middle" font-size="9">log + notify</text>
+      </svg>
+      <figcaption>A real n8n workflow: HubSpot trigger → LLM draft → human approval → Gmail send + Slack notify. Built visually, runs in production.</figcaption>
+    </figure>
+
+    <p>Trigger types you\'ll use:</p>
+    <ul>
+      <li><strong>Webhook.</strong> External service sends an HTTP request. Stripe payment, GitHub issue, anything with webhooks.</li>
+      <li><strong>Schedule.</strong> Cron. "Every weekday 9am send the daily digest."</li>
+      <li><strong>App event.</strong> Built-in connectors poll the service (new Gmail, new HubSpot deal, new Notion row).</li>
+      <li><strong>Manual / form.</strong> You or a teammate clicks a button or fills a form.</li>
+    </ul>
+
+    <figure class="video-embed">
+      <div class="video-embed__frame">
+        <iframe src="https://www.youtube.com/embed/GuaKeDS6UKU"
+                title="n8n Quick Start Tutorial: Build Your First AI Agent [2026]"
+                loading="lazy" allowfullscreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+      </div>
+      <figcaption>
+        <span class="video-embed__meta">Watch · n8n official · 2026</span>
+        <strong>n8n Quick Start: Build Your First AI Agent (2026)</strong>
+        Official 2026 quickstart. The fastest way to see a real workflow assembled from scratch — useful even if your team will end up coding in LangGraph, just to understand the no-code mental model your business team will use.
+        <br><a class="video-embed__yt-link" href="https://www.youtube.com/watch?v=GuaKeDS6UKU" target="_blank" rel="noopener">Open on YouTube ↗</a>
+      </figcaption>
+    </figure>
+
+    <h2 id="approvals" class="section-anchor">3. Approvals in workflows</h2>
+    <p>n8n supports HITL natively. Use the <strong>Wait</strong> node with a "resume on webhook" or "resume on email" mode. Workflow pauses, sends a Slack/email asking for approve/reject, resumes on response. Persists across days. Same pattern as Module 4\'s LangGraph interrupt — different UI, same idea.</p>
+    <p>Apply Module 1\'s rule: gate the irreversible (send_email, charge_card, write to prod DB), audit the reversible (read-only lookups, draft generation).</p>
+
+    <h2 id="integrations" class="section-anchor">4. Integrations</h2>
+    <p>n8n ships with 600+ connectors. The ones you\'ll actually use:</p>
+    <ul>
+      <li><strong>Communication:</strong> Slack, Teams, Discord, Email (SMTP, Gmail, Outlook), Twilio (SMS)</li>
+      <li><strong>CRM &amp; sales:</strong> HubSpot, Salesforce, Pipedrive</li>
+      <li><strong>Productivity:</strong> Notion, Airtable, Google Sheets, Google Drive</li>
+      <li><strong>Dev &amp; data:</strong> GitHub, Linear, Postgres, MySQL, MongoDB, Webhook (anything HTTP)</li>
+      <li><strong>AI:</strong> OpenAI, Anthropic, Hugging Face, vector stores (Pinecone, Qdrant, Weaviate)</li>
+    </ul>
+    <p>For anything missing, the <strong>HTTP Request</strong> node lets you call any REST API. So "n8n doesn\'t support X" is rarely a blocker.</p>
+
+    <figure class="video-embed">
+      <div class="video-embed__frame">
+        <iframe src="https://www.youtube.com/embed/eQNkwr82KVo"
+                title="n8n AI Agents & Automation Complete Course (2026)"
+                loading="lazy" allowfullscreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+      </div>
+      <figcaption>
+        <span class="video-embed__meta">Watch · 2026 complete course</span>
+        <strong>n8n AI Agents &amp; Automation — Complete Course (2026)</strong>
+        Longer comprehensive course. Useful for the team member who will own your no-code workflows. Skip ahead to chapters that match your immediate use case.
+        <br><a class="video-embed__yt-link" href="https://www.youtube.com/watch?v=eQNkwr82KVo" target="_blank" rel="noopener">Open on YouTube ↗</a>
+      </figcaption>
+    </figure>
+
+    <h2 id="audit" class="section-anchor">5. Audit logs &amp; governance</h2>
+    <p>Two governance moves for n8n at scale:</p>
+    <ul>
+      <li><strong>Execution log.</strong> Every workflow run is logged — inputs, outputs, errors, time. Retain for as long as compliance demands. Searchable.</li>
+      <li><strong>Workflow review.</strong> Before a workflow goes to production, a designated owner reviews it: triggers, credentials, scope of actions, who approves. Same as code review but for visual workflows. Quarterly re-review of active workflows.</li>
+    </ul>
+
+    <h2 id="security" class="section-anchor">6. Security considerations</h2>
+    <ul>
+      <li><strong>Credentials in one place.</strong> n8n\'s credential store. Never hardcode API keys in node fields.</li>
+      <li><strong>Least-privilege credentials.</strong> The "Gmail send" workflow should use a Gmail account that can only send (not read inbox). Same logic as Module 9.</li>
+      <li><strong>Allowlist recipients on send actions.</strong> Same rule as in code: an n8n workflow that sends email should target a curated list, not "any email."</li>
+      <li><strong>Self-host for sensitive data.</strong> n8n is open-source. Cloud is fine for non-sensitive work; self-host when data can\'t leave your network.</li>
+      <li><strong>Workflow change control.</strong> Production workflows shouldn\'t be edited live by anyone. Stage in dev → review → promote.</li>
+    </ul>
+
+    <figure class="video-embed">
+      <div class="video-embed__frame">
+        <iframe src="https://www.youtube.com/embed/bKX8t3QA04s"
+                title="n8n Tutorial For Beginners (2026) | How to Build AI Automations & Agents"
+                loading="lazy" allowfullscreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+      </div>
+      <figcaption>
+        <span class="video-embed__meta">Watch · 2026 beginner-focused</span>
+        <strong>n8n Tutorial For Beginners (2026) — AI Automations &amp; Agents</strong>
+        Another fresh 2026 walkthrough. Use whichever resonates with your learning style — the underlying tool is the same.
+        <br><a class="video-embed__yt-link" href="https://www.youtube.com/watch?v=bKX8t3QA04s" target="_blank" rel="noopener">Open on YouTube ↗</a>
+      </figcaption>
+    </figure>
+
+    <div class="walkthrough" data-walkthrough-id="m11-n8n">
+      <div class="walkthrough__header"><h4 class="walkthrough__title">▷ Step through: a "deal closed → welcome" workflow</h4><span class="walkthrough__subtitle">6 steps · with HITL approval</span></div>
+      <div class="walkthrough__viewport">
+        <svg viewBox="0 0 700 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="n8n walkthrough">
+          <g data-wf="1,2,3,4,5,6"><rect x="20" y="20" width="200" height="40" rx="6" fill="#FFF1E0" stroke="#B85C00"/><text x="120" y="40" text-anchor="middle" font-size="10" font-weight="700">TRIGGER: HubSpot deal</text><text x="120" y="54" text-anchor="middle" font-size="9">stage = "Closed Won"</text></g>
+          <g data-wf="2,3,4,5,6"><rect x="240" y="20" width="200" height="40" rx="6" fill="#EDF0FF" stroke="#3D5AFE"/><text x="340" y="40" text-anchor="middle" font-size="10" font-weight="700">LLM: draft welcome email</text><text x="340" y="54" text-anchor="middle" font-size="9">company name, plan, pricing</text></g>
+          <g data-wf="3,4,5,6"><rect x="460" y="20" width="220" height="40" rx="6" fill="#FFF1E0" stroke="#B85C00"/><text x="570" y="40" text-anchor="middle" font-size="10" font-weight="700">SLACK: ask founder to approve</text><text x="570" y="54" text-anchor="middle" font-size="9">message with draft + buttons</text></g>
+          <g data-wf="4,5,6"><rect x="20" y="80" width="200" height="40" rx="6" fill="#FFFFFF" stroke="#1A1A1A"/><text x="120" y="100" text-anchor="middle" font-size="10" font-weight="700">WAIT (HITL)</text><text x="120" y="114" text-anchor="middle" font-size="9">workflow paused</text></g>
+          <g data-wf="5,6"><rect x="240" y="80" width="200" height="40" rx="6" fill="#E6F4E6" stroke="#2E7D32"/><text x="340" y="100" text-anchor="middle" font-size="10" font-weight="700">FOUNDER CLICKS APPROVE</text><text x="340" y="114" text-anchor="middle" font-size="9">webhook resumes flow</text></g>
+          <g data-wf="6"><rect x="460" y="80" width="220" height="40" rx="6" fill="#E6F4E6" stroke="#2E7D32" stroke-width="2"/><text x="570" y="100" text-anchor="middle" font-size="10" font-weight="700">SEND EMAIL + POST SLACK</text><text x="570" y="114" text-anchor="middle" font-size="9">Gmail + #new-customers</text></g>
+          <g data-wf="6"><rect x="20" y="140" width="660" height="40" rx="6" fill="#F3F0E8" stroke="#7A7A7A"/><text x="32" y="160" font-size="10" fill="#7A7A7A">EXECUTION LOG</text><text x="32" y="174" font-family="SF Mono, monospace" font-size="10" fill="#1A1A1A">trace: deal_id=42 · approver: founder@ · sent: 2026-05-18T11:02 · duration: 6h 14m (waited for approval)</text></g>
+          <g data-wf="6"><text x="350" y="220" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#1A1A1A" font-style="italic">Code equivalent: 200 lines of Python + a webhook server + a DB to persist state.</text><text x="350" y="240" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#1A1A1A" font-style="italic">n8n: 6 nodes, 30 minutes, runnable by your ops team.</text></g>
+        </svg>
+      </div>
+      <div class="walkthrough__caption"><h4 class="walkthrough__step-title"></h4><p class="walkthrough__step-body"></p></div>
+      <div class="walkthrough__controls"><button class="walkthrough__nav-btn" data-action="prev">←</button><span class="walkthrough__step-indicator"></span><button class="walkthrough__nav-btn" data-action="next">→</button><button class="walkthrough__play-btn" data-action="play">▶ Play</button></div>
+    </div>
+
+    <section class="books-section section-anchor" id="books">
+      <h2>📚 Resources &amp; Deeper Reading</h2>
+      <div class="books-grid">
+        <div class="book-card"><h4>n8n official docs</h4><div class="author">n8n</div><div class="why">The canonical reference. Start with "Quickstart" and "Workflow concepts." Excellent search.</div><div class="meta meta--free">Free · <a href="https://docs.n8n.io/" target="_blank" rel="noopener">docs.n8n.io ↗</a></div></div>
+        <div class="book-card"><h4>n8n template library</h4><div class="author">Community</div><div class="why">Pre-built workflows for common patterns. Use as starting points — most teams build their first 3-5 workflows by adapting templates.</div><div class="meta meta--free">Free · <a href="https://n8n.io/workflows/" target="_blank" rel="noopener">n8n.io/workflows ↗</a></div></div>
+        <div class="book-card"><h4>Self-hosted setup guide</h4><div class="author">n8n</div><div class="why">For when data sensitivity requires on-prem. Docker setup is ~30 minutes.</div><div class="meta meta--free">Free · <a href="https://docs.n8n.io/hosting/" target="_blank" rel="noopener">docs.n8n.io/hosting ↗</a></div></div>
+        <div class="book-card"><h4>Zapier vs. Make vs. n8n comparison</h4><div class="author">Various</div><div class="why">If your team prefers Zapier or Make, the architecture is similar. Patterns in this module transfer. n8n\'s differentiators: self-hostable, more powerful logic, better AI nodes.</div><div class="meta meta--free">Free (search)</div></div>
+      </div>
+    </section>
+
+    <section id="resume" class="resume-panel section-anchor">
+      <h2>🚀 What You Can Now Build (and Claim)</h2>
+      <h3>What you can now design end-to-end</h3>
+      <ul style="margin: 0 0 1.25rem 0.4rem; padding-left: 1.1rem;">
+        <li>Decide no-code vs. code for any new internal automation in 30 seconds.</li>
+        <li>Build a multi-step AI workflow with triggers, conditional logic, and HITL approvals in an afternoon.</li>
+        <li>Govern n8n at scale: workflow review, credential management, change control.</li>
+        <li>Train non-technical teammates to build their own workflows safely.</li>
+      </ul>
+      <h3>Resume bullets you can defend</h3>
+      <div class="resume-bullet" data-copy-text="Operationalized internal AI automations via n8n — visual workflows with LLM nodes, HITL approval gates, allowlisted integrations, and centralized credential management, enabling non-engineering teammates to ship within governance guardrails.">Operationalized internal AI automations via n8n — visual workflows with LLM nodes, HITL approval gates, allowlisted integrations, and centralized credential management, enabling non-engineering teammates to ship within governance guardrails.<button class="copy-btn">Copy</button></div>
+      <div class="resume-bullet" data-copy-text="Established no-code vs. code decision framework for new automations — preventing engineering bandwidth waste on workflows better suited to n8n, and preventing fragility on workflows that needed proper code review.">Established no-code vs. code decision framework for new automations — preventing engineering bandwidth waste on workflows better suited to n8n, and preventing fragility on workflows that needed proper code review.<button class="copy-btn">Copy</button></div>
+      <h3>Likely interview / investor / hiring questions</h3>
+      <div class="qa"><div class="q">Q: Why use n8n if you have engineers?</div><div class="a">A: Two reasons. One: business-team workflows shouldn\'t require engineering tickets. "Notify Slack when a deal closes" is a 30-minute n8n workflow, not a 2-day engineering investment. Two: my engineers should be writing the code that matters — the agentic logic, the data pipelines, the customer-facing app. Internal glue is a poor use of expensive engineers. n8n moves that glue to people who can own it directly.</div></div>
+      <div class="qa"><div class="q">Q: How do you stop n8n becoming a security risk?</div><div class="a">A: Three controls. (1) Centralized credentials — never hardcoded in workflows; least-privilege scopes per credential. (2) Workflow review before production — designated owner approves the workflow same way we\'d code-review a PR. (3) Audit log retained; quarterly review of active workflows. Self-host when data sensitivity requires it. Same governance as code; just visual.</div></div>
+    </section>
+
+    <section id="test" class="section-anchor"><div id="test-container"></div></section>
+    <nav class="module-nav" id="module-nav"></nav>
+  </main>
+
+  <footer class="site-footer"><div>Full Stack Agentic AI Engineering · Module 11 · <a href="../index.html">Course home</a></div></footer>
+
+  <script src="../assets/js/progress.js"></script>
+  <script src="../assets/js/test-engine.js"></script>
+  <script src="../assets/js/nav.js"></script>
+  <script src="../assets/js/ui.js"></script>
+  <script src="../assets/js/walkthroughs.js"></script>
+  <script src="../assets/data/syllabus.js"></script>
+  <script>
+    renderSiteHeader('#site-header', '../');
+
+    window.WALKTHROUGHS['m11-n8n'] = {
+      frames: [
+        { title: '1. Trigger fires', body: 'A new deal closes in HubSpot. The n8n HubSpot trigger node polls (or receives a webhook) and starts the workflow. Deal data (company, plan, amount) flows into the next node.' },
+        { title: '2. LLM drafts welcome email', body: 'An OpenAI/Anthropic node reads the deal data and drafts a personalized welcome email. Prompt is stored in the node config — versioned, editable by anyone with workflow access.' },
+        { title: '3. Slack node sends approval request', body: 'The drafted email goes to a Slack message in #founder-approvals, with Approve and Reject buttons. Same content gets shown to a human before any external send.' },
+        { title: '4. Wait node pauses workflow', body: 'A Wait node freezes execution. State is persisted in n8n\'s DB. The founder can take an hour, a day, doesn\'t matter — workflow resumes when the Slack button is clicked.' },
+        { title: '5. Founder clicks Approve', body: 'Slack sends a webhook to n8n with the approval payload. The Wait node resumes the workflow. If Reject was clicked, an alternate branch runs (log, notify ops, no send).' },
+        { title: '6. Email sent + Slack notify + logged', body: 'Gmail node sends the approved email. A second Slack node posts to #new-customers ("welcomed [Company] on plan X"). The execution log captures every step — deal ID, approver identity, timestamps, full email content. Audit-ready.' }
+      ]
+    };
+
+    const TEST = {
+      moduleId: 'module-11',
+      mcqs: [
+        { q: 'When does n8n fit better than coded automation?', options: ['When logic is highly complex with state and loops', 'When the workflow is business glue: trigger → integrations → notify, and non-engineers will own it', 'When latency must be <50ms', 'When you need GPU'], correct: 1, explain: 'n8n shines for glue workflows owned by business teams. Complex stateful logic, very high volume, or specialized infra needs → code.' },
+        { q: 'What\'s the role of a trigger node?', options: ['Final action', 'The thing that kicks the workflow off (webhook, schedule, app event, manual)', 'A debug tool', 'A logger'], correct: 1, explain: 'Trigger = entry point. Every workflow has exactly one. Subsequent nodes are actions or conditions.' },
+        { q: 'How does n8n support HITL?', options: ['It doesn\'t', 'Wait node — workflow pauses, sends approval request, resumes on webhook/email', 'Only via custom code', 'Only in enterprise tier'], correct: 1, explain: 'Wait node persists state and pauses indefinitely. Resume via webhook or email reply. Same pattern as LangGraph interrupt (Module 4).' },
+        { q: 'For sensitive data, you should:', options: ['Use n8n Cloud always', 'Self-host n8n (it\'s open source) so data stays on your network', 'Avoid n8n entirely', 'Encrypt nothing'], correct: 1, explain: 'n8n is open source. Self-host with Docker (~30 min) when data sensitivity requires on-prem.' },
+        { q: 'Where should you store API keys in n8n?', options: ['Hardcoded in node fields', 'In n8n\'s credential store (centralized, encrypted, reusable)', 'In a Notion doc', 'In environment variables only'], correct: 1, explain: 'Credential store is the standard. Hardcoding leaks credentials to anyone editing the workflow.' },
+        { q: 'Which rule from Module 9 still applies in n8n?', options: ['None', 'Allowlist recipients on send actions; least-privilege credentials; HITL on irreversible actions', 'Use blocklists instead', 'Disable audit logs to save space'], correct: 1, explain: 'Security rules are framework-agnostic. n8n needs the same allowlists, least-privilege, HITL, audit as any coded system.' },
+        { q: 'What does an n8n execution log capture?', options: ['Just success/failure', 'Inputs, outputs, errors, time, per workflow run — searchable, retainable', 'GPU usage', 'Token usage only'], correct: 1, explain: 'Execution log = the audit trail. Inputs, outputs, errors, time per workflow run. Search and retention per compliance.' },
+        { q: 'A workflow integrates with a service n8n doesn\'t have a native connector for. What do you use?', options: ['Give up', 'The HTTP Request node — call any REST API', 'Switch tools', 'Wait for n8n to add the connector'], correct: 1, explain: 'HTTP Request node = universal escape hatch. Any REST API, any auth method. "n8n doesn\'t support X" is rarely a blocker.' },
+        { q: 'Who should own a production n8n workflow?', options: ['No one — anyone can edit', 'A designated owner with change control: stage → review → promote', 'The CTO personally', 'External vendor'], correct: 1, explain: 'Same as code: a designated owner; stage in dev, review, promote to prod. No live-editing of production workflows.' },
+        { q: 'How often should you review active n8n workflows?', options: ['Never', 'Quarterly review of all active workflows + on every significant change', 'Daily', 'Only on incident'], correct: 1, explain: 'Quarterly review catches drift, deprecated credentials, broken integrations, and outdated logic. Workflows aren\'t fire-and-forget.' }
+      ],
+      scenarios: [
+        { q: 'Your ops team wants to automate "when an enterprise customer signs the contract, draft an onboarding plan, send to AE for approval, then post to a private Slack channel and create a Notion page for the customer." Engineer says "give me 3 weeks." You say:', modelAnswer: 'Don\'t build this in code. This is exactly the n8n sweet spot.\n\nWhy:\n• Pure glue: contract signed → AI draft → human approve → 2 integrations.\n• Non-engineering team (sales ops, AE) will own and adjust over time.\n• Volume is low-dozens per month.\n• 600+ native connectors for the SaaS pieces.\n\nWhat I\'d brief instead: "Have Ops build this in n8n. Trigger = DocuSign webhook (or HubSpot stage change). LLM node drafts the plan with the contract summary as context. Slack node sends to the AE with Approve/Edit/Reject buttons. Wait node pauses. On approve: Notion node creates a customer page, Slack node posts to #customer-success. On reject: log, notify ops manager. Total: 6-8 nodes, half a day."\n\nEngineering team focuses on the agentic features that actually need code. Sales ops gets ownership and can iterate the prompt without filing tickets. Win-win.\n\nGuardrails: AE must be on the approval workflow (HITL gate). Credentials centralized. Quarterly review with sales ops to make sure the prompt is still working. Logs retained per data retention policy.' },
+        { q: 'A founder asks "Should our entire AI strategy run on n8n?" Honest answer.', modelAnswer: 'No, but n8n should be ~30% of it.\n\nWhat belongs in n8n: cross-system glue, periodic batch jobs, low-volume HITL workflows, anything a non-engineer will own. The "automate this internal process" bucket.\n\nWhat doesn\'t: customer-facing real-time agents (need code, LangGraph, latency control), high-volume processing (10k+/day starts hurting n8n at scale), complex agentic reasoning (loops, branching state, multi-step planning), anything that needs custom evaluation and observability.\n\nThe right rule: use n8n for orchestration of LLM calls in business processes. Use code for the agentic reasoning itself, exposed as APIs or MCP servers (Module 8) that n8n can call.\n\nConcrete picture: your customer support agent runs in code (LangGraph, fully tested). It exposes an HTTP endpoint. n8n workflows call that endpoint when business events occur (a customer escalation, a feedback survey, a renewal coming up). Code handles the AI; n8n handles the "when and why to invoke the AI."\n\nIf your entire strategy is in n8n, you\'ll hit scaling and reliability limits within 6 months. If you have zero n8n, you\'re writing 200-line Python services for what should be 6-node workflows — wasting engineering on glue.' },
+        { q: 'A teammate built an n8n workflow that automatically posts to customer Slack channels based on agent output. It posted a draft that wasn\'t supposed to be sent. How do you respond and what do you change?', modelAnswer: 'Three-step response.\n\nImmediate (today):\n\n1. Disable the workflow. Investigate via the execution log: what triggered it, what content was generated, what was sent. Apologize to the customer if needed.\n\n2. Cause analysis. Three likely causes: (a) no HITL gate between draft and send; (b) prompt was changed without review; (c) trigger condition was too broad.\n\nFix the workflow (this week):\n\n3. Add a Wait node + Slack approval ping between "draft" and "send to customer." Same rule as Module 1: irreversible side effect on the world (customer comms) requires human approval.\n\n4. Tighten trigger conditions. If the workflow was firing on too many events, narrow the filter (e.g., specific deal stages, specific customer tiers).\n\n5. Allowlist target channels. The workflow should be able to post to only a specific set of channels, not "any channel based on agent output."\n\nProcess change (this month):\n\n6. Workflow review checklist. Before any n8n workflow goes to production: does it touch external systems? If yes, must have HITL on the side-effecting node. Must use credential store. Must have a designated owner. Must have execution log retention configured.\n\n7. Quarterly workflow audit. Walk through every active workflow with the owner. Check the gates are still appropriate, integrations still scoped, credentials still least-privilege.\n\nWhy this happened: same reason production code incidents happen — a control was missing. The fix is to apply our existing safety patterns (Modules 1, 9) to n8n workflows uniformly. n8n is visual code, not magic.' }
+      ]
+    };
+
+    renderTest(TEST, document.getElementById('test-container'));
+    renderModuleNav('module-11', '#module-nav');
+    initWalkthroughs();
+  </script>
+</body>
+</html>

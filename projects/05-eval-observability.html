@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project 5 — LLM Evaluation & Observability (Langfuse) · Agentic AI Course</title>
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/module.css">
+  <link rel="stylesheet" href="../assets/css/print.css">
+</head>
+<body>
+
+  <header class="site-header" id="site-header"></header>
+
+  <section class="module-hero">
+    <div class="module-hero__inner">
+      <div class="num">Project 5 · Portfolio</div>
+      <h1>LLM Evaluation & Observability</h1>
+      <p class="subtitle">The control plane for every other agent. Traces, evals, experiments, cost/latency — so you ship with discipline instead of vibes.</p>
+      <div class="meta">
+        <span>Prerequisites: M9 · M10</span>
+        <span>·</span>
+        <span>Build time: 3–4 engineering weeks</span>
+      </div>
+    </div>
+  </section>
+
+  <main class="container">
+
+    <h2 id="problem">Problem statement</h2>
+    <p>
+      Your team has 3 agents running in production. Quality is "fine" — until it isn\'t. The LLM provider updates a model and quietly degrades performance. An engineer tweaks a prompt and breaks citation coverage. Cost p99 spikes on a particular customer\'s usage pattern. You find out via customer complaint three weeks later. The fix is observability + evaluation discipline as a system, not an afterthought.
+    </p>
+
+    <h2 id="motivation">Why a founder builds this</h2>
+    <ul>
+      <li><strong>Ship with confidence.</strong> Every prompt or model change passes through a labeled regression check. Regressions don\'t reach production.</li>
+      <li><strong>Cost control.</strong> p50 and p99 cost-per-task tracked; per-tenant budgets enforced; spikes alert before the bill arrives.</li>
+      <li><strong>Compliance posture.</strong> Every agent decision is a queryable trace. "Show me what happened on this transaction" — answered in 30s, not 3 days.</li>
+      <li><strong>Closes enterprise deals.</strong> Security reviews always ask "how do you monitor your AI?" Having a real answer wins the deal.</li>
+    </ul>
+
+    <h2 id="architecture">Architecture</h2>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 720 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Eval and observability architecture">
+        <defs><marker id="p5-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#3D5AFE"/></marker></defs>
+
+        <rect x="20" y="20" width="200" height="60" rx="6" fill="#EDF0FF" stroke="#3D5AFE"/>
+        <text x="120" y="42" text-anchor="middle" font-size="11" font-weight="700">AGENTS (3 in prod)</text>
+        <text x="120" y="58" text-anchor="middle" font-size="9">support · ops · data</text>
+        <text x="120" y="72" text-anchor="middle" font-size="9">SDK auto-trace every span</text>
+
+        <line x1="220" y1="50" x2="245" y2="50" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#p5-arr)"/>
+
+        <rect x="250" y="20" width="200" height="60" rx="6" fill="#EDF0FF" stroke="#3D5AFE" stroke-width="2"/>
+        <text x="350" y="42" text-anchor="middle" font-size="11" font-weight="700">LANGFUSE</text>
+        <text x="350" y="58" text-anchor="middle" font-size="9">traces · spans · scores</text>
+        <text x="350" y="72" text-anchor="middle" font-size="9">prompt registry · datasets</text>
+
+        <line x1="450" y1="50" x2="475" y2="50" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#p5-arr)"/>
+
+        <rect x="480" y="20" width="220" height="60" rx="6" fill="#FFFFFF" stroke="#1A1A1A"/>
+        <text x="590" y="42" text-anchor="middle" font-size="11" font-weight="700">DASHBOARDS</text>
+        <text x="590" y="58" text-anchor="middle" font-size="9">cost p50/p99 · latency · scores</text>
+        <text x="590" y="72" text-anchor="middle" font-size="9">per agent · per tenant · per prompt version</text>
+
+        <rect x="20" y="100" width="680" height="50" rx="6" fill="#FFF1E0" stroke="#B85C00"/>
+        <text x="360" y="120" text-anchor="middle" font-size="11" font-weight="700">EVAL PIPELINE</text>
+        <text x="360" y="138" text-anchor="middle" font-size="9">Labeled datasets · LLM-as-judge (calibrated) · per-signal scores · regression gates</text>
+
+        <line x1="120" y1="150" x2="120" y2="175" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#p5-arr)"/>
+        <line x1="360" y1="150" x2="360" y2="175" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#p5-arr)"/>
+        <line x1="600" y1="150" x2="600" y2="175" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#p5-arr)"/>
+
+        <rect x="20" y="180" width="200" height="80" rx="6" fill="#E6F4E6" stroke="#2E7D32"/>
+        <text x="120" y="200" text-anchor="middle" font-size="11" font-weight="700">CI GATE</text>
+        <text x="120" y="216" text-anchor="middle" font-size="9">PR runs 30-case smoke eval</text>
+        <text x="120" y="230" text-anchor="middle" font-size="9">Merge gated on no regression</text>
+        <text x="120" y="246" text-anchor="middle" font-size="9">Cycle: ~2 min</text>
+
+        <rect x="260" y="180" width="200" height="80" rx="6" fill="#E6F4E6" stroke="#2E7D32"/>
+        <text x="360" y="200" text-anchor="middle" font-size="11" font-weight="700">NIGHTLY</text>
+        <text x="360" y="216" text-anchor="middle" font-size="9">Full 200-case regression</text>
+        <text x="360" y="230" text-anchor="middle" font-size="9">Compare vs prior 7 days</text>
+        <text x="360" y="246" text-anchor="middle" font-size="9">Alert on drift</text>
+
+        <rect x="500" y="180" width="200" height="80" rx="6" fill="#E6F4E6" stroke="#2E7D32"/>
+        <text x="600" y="200" text-anchor="middle" font-size="11" font-weight="700">SHADOW DEPLOY</text>
+        <text x="600" y="216" text-anchor="middle" font-size="9">5% traffic to candidate</text>
+        <text x="600" y="230" text-anchor="middle" font-size="9">Live score comparison</text>
+        <text x="600" y="246" text-anchor="middle" font-size="9">Auto-rollback on regression</text>
+
+        <rect x="20" y="280" width="680" height="44" rx="6" fill="#F3F0E8" stroke="#7A7A7A"/>
+        <text x="360" y="300" text-anchor="middle" font-size="11" font-weight="700">WEEKLY REVIEW</text>
+        <text x="360" y="316" text-anchor="middle" font-size="9">Trends · escalations added to eval set · cost &amp; latency budgets · prompt registry curation</text>
+      </svg>
+      <figcaption>Observability as a control plane. Three feedback loops (CI smoke, nightly regression, shadow deploy) plus weekly review. Quality drift caught in seconds-to-hours, not weeks.</figcaption>
+    </figure>
+
+    <h2 id="components">Component breakdown</h2>
+    <table class="compare-table">
+      <thead><tr><th>Component</th><th>Module(s)</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td>Auto-tracing SDK</td><td>M10</td><td>Every agent wired with Langfuse SDK at startup. LLM calls, retrievals, tool calls, sub-chains traced automatically.</td></tr>
+        <tr><td>Eval datasets</td><td>M10</td><td>Per agent: 200-case labeled set (questions + expected outputs / criteria). Curated + reviewed quarterly.</td></tr>
+        <tr><td>LLM-as-judge evaluators</td><td>M10</td><td>Per signal (groundedness, citation coverage, task success). Calibrated against humans on 50 cases; &gt;85% agreement required.</td></tr>
+        <tr><td>Smoke test (CI)</td><td>M10</td><td>30-case subset runs on every PR. ~2 min. Merge gated on no regression vs main.</td></tr>
+        <tr><td>Nightly regression</td><td>M10</td><td>Full 200-case eval runs nightly. Compare to 7-day rolling baseline. Alert on drift.</td></tr>
+        <tr><td>Shadow deploy</td><td>M10</td><td>Candidate prompt/model gets 5% of real traffic. Live scores compared. Auto-rollback on regression.</td></tr>
+        <tr><td>Prompt registry</td><td>M10</td><td>Versioned prompts referenced by name. Deploying a new version is a config change, not a code release. Rollback in seconds.</td></tr>
+        <tr><td>Cost &amp; latency monitors</td><td>M10</td><td>p50 + p99 tracked per agent, per tenant, per prompt version. Hard budgets per task. Alerts on spike.</td></tr>
+        <tr><td>Trace explorer</td><td>M10</td><td>Search by trace_id, user_id, score range, prompt version. Find the failing span in 30s.</td></tr>
+        <tr><td>Weekly review</td><td>M10</td><td>30-min team meeting: trends, escalations, anomalies. Production incidents become eval cases.</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="tradeoffs">Design decisions you can defend</h2>
+    <ul>
+      <li><strong>Three eval tiers, not one.</strong> CI smoke is fast (won\'t block PRs); nightly is thorough; shadow deploy is live. Each tier catches a different class of regression.</li>
+      <li><strong>5 signals, not 18.</strong> Force-rank what drives ship decisions: task success, schema validity, one quality signal (groundedness for RAG), cost p99, latency p99. More than five and the team stops looking.</li>
+      <li><strong>LLM-as-judge calibrated against humans.</strong> 50 human-labeled cases; agreement must exceed 85%. Without this, "scores" are noise.</li>
+      <li><strong>Different model as judge.</strong> GPT judging GPT is lenient; cross-model judging avoids that bias.</li>
+      <li><strong>Prompt registry is mandatory.</strong> Every prompt change is a versioned config deploy. Rollback in seconds; old versions retained.</li>
+      <li><strong>Shadow deploy before rollout.</strong> Catches what evals miss — production input distribution is always different from labeled sets.</li>
+      <li><strong>Weekly human review.</strong> Production incidents become eval cases. The dataset grows with reality.</li>
+    </ul>
+
+    <h2 id="failures">Failure modes &amp; mitigations</h2>
+    <table class="compare-table">
+      <thead><tr><th>Failure mode</th><th>Mitigation</th></tr></thead>
+      <tbody>
+        <tr><td>Eval dataset doesn\'t match production distribution</td><td>Sample production traces weekly; add representative cases to dataset; quarterly review.</td></tr>
+        <tr><td>LLM-as-judge is too lenient</td><td>Periodic recalibration against humans; cross-model judges; track judge agreement rate as its own metric.</td></tr>
+        <tr><td>Score gaming (engineers tune to the eval set)</td><td>Hold-out set never used for tuning; rotate eval cases; reward "production quality" not "eval score."</td></tr>
+        <tr><td>Cost spikes from runaway agent</td><td>Hard per-task budgets at agent layer; cost p99 alerts &lt; 5 min; per-tenant rate limits.</td></tr>
+        <tr><td>Eval pipeline becomes slow</td><td>Tiered pipeline (CI smoke 2 min, nightly 15 min, comprehensive 1 hour). Don\'t conflate them.</td></tr>
+        <tr><td>Langfuse / provider outage</td><td>Buffer traces locally if upstream is down; lose telemetry briefly but agents stay up; backfill on recovery.</td></tr>
+        <tr><td>Dashboard fatigue (no one looks)</td><td>One dashboard, 5 metrics, weekly 30-min review. If a metric never drives a decision, drop it.</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="interview">Interview / investor / customer talking points</h2>
+    <div class="resume-panel" style="margin-top: 0;">
+      <div class="qa"><div class="q">Q: An LLM provider updates a model. What\'s your process?</div><div class="a">A: Three-stage rollout. (1) Run our 200-case eval dataset against the new model — pin down quality delta on every signal. (2) Shadow deploy: 5% of production traffic to new model, compare live scores side-by-side for 2-3 days. (3) Gradual rollout if both pass: 25% → 50% → 100%, auto-rollback on regression. Whole process takes about a week. Without this, you find out via customer complaints — wrong feedback loop.</div></div>
+      <div class="qa"><div class="q">Q: How do you make sure your eval set actually reflects reality?</div><div class="a">A: Three feedback loops. Sample production traces weekly and add representative new cases. Production incidents (customer complaints, edge cases) get added immediately. Quarterly review of full dataset for staleness. Hold-out set never used for tuning, so we know honest performance, not gamed performance.</div></div>
+      <div class="qa"><div class="q">Q: Why Langfuse over LangSmith or Helicone?</div><div class="a">A: Open source + self-hostable was the deciding factor. We control our trace data — critical for regulated customers. The feature set across the three is similar; the implementation underneath is what matters for trust. LangSmith is the closest comparable; if we were heavier on LangChain we\'d weigh it harder. Helicone is great for cost-focused use cases. For us, Langfuse balanced flexibility, control, and feature depth.</div></div>
+      <div class="qa"><div class="q">Q: A board member asks for ROI on the observability investment.</div><div class="a">A: Three signal-of-value moments. (1) Caught a model regression in shadow deploy that would have hit 100% of users — single incident avoided saves the equivalent of a customer-success quarter. (2) Pinpointed a runaway agent loop within minutes via cost p99 alerts; without observability we\'d have learned at month-end via the invoice. (3) Closed two enterprise deals where the security review specifically asked "show us how you monitor AI" — having a real answer was the differentiator. ROI is loose because these are tail-risk and revenue events, but each one pays back the entire investment many times.</div></div>
+    </div>
+
+    <h2 id="resume-bullets">Resume bullets for Project 5</h2>
+    <div class="resume-panel" style="margin-top: 0;">
+      <div class="resume-bullet" data-copy-text="Established end-to-end LLM observability and evaluation discipline using Langfuse — auto-traced 3 production agents, 200-case labeled eval datasets per agent, LLM-as-judge evaluators calibrated against humans, and a three-tier regression pipeline (CI smoke, nightly, shadow deploy).">Established end-to-end LLM observability and evaluation discipline using Langfuse — auto-traced 3 production agents, 200-case labeled eval datasets per agent, LLM-as-judge evaluators calibrated against humans, and a three-tier regression pipeline (CI smoke, nightly, shadow deploy).<button class="copy-btn">Copy</button></div>
+      <div class="resume-bullet" data-copy-text="Implemented "no prompt or model change ships without regression check" as a team norm — gated by automated experiments comparing candidate vs production on labeled datasets, with shadow-deploy live validation for non-trivial changes.">Implemented "no prompt or model change ships without regression check" as a team norm — gated by automated experiments comparing candidate vs production on labeled datasets, with shadow-deploy live validation for non-trivial changes.<button class="copy-btn">Copy</button></div>
+      <div class="resume-bullet" data-copy-text="Closed agentic-AI security reviews by providing reconstructable per-decision traces, prompt-version registry, and HITL approval logs — turning "show us how you monitor your AI" from a stalled deal into a competitive differentiator.">Closed agentic-AI security reviews by providing reconstructable per-decision traces, prompt-version registry, and HITL approval logs — turning "show us how you monitor your AI" from a stalled deal into a competitive differentiator.<button class="copy-btn">Copy</button></div>
+    </div>
+
+    <nav class="module-nav">
+      <a class="module-nav__btn" href="04-databricks-ask-to-query.html"><div class="dir">← Previous</div><div class="title">Project 4 — Ask-to-Query</div></a>
+      <a class="module-nav__btn module-nav__btn--next" href="../resume/index.html"><div class="dir">Next →</div><div class="title">Resume Kit</div></a>
+    </nav>
+  </main>
+
+  <footer class="site-footer"><div>Full Stack Agentic AI Engineering · Project 5 · <a href="../index.html">Course home</a></div></footer>
+
+  <script src="../assets/js/progress.js"></script>
+  <script src="../assets/js/nav.js"></script>
+  <script src="../assets/js/ui.js"></script>
+  <script src="../assets/data/syllabus.js"></script>
+  <script>renderSiteHeader('#site-header', '../');</script>
+</body>
+</html>

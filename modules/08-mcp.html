@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module 8 — MCP & Tool Standardization · Agentic AI Course</title>
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/module.css">
+  <link rel="stylesheet" href="../assets/css/print.css">
+</head>
+<body data-module-id="module-08">
+
+  <header class="site-header" id="site-header"></header>
+
+  <section class="module-hero">
+    <div class="module-hero__inner">
+      <div class="num">Module 8</div>
+      <h1>MCP — Model Context Protocol</h1>
+      <p class="subtitle">The open standard for connecting AI agents to tools. The "USB-C of AI" — write one server, every agent can use it.</p>
+      <div class="meta"><span>⏱ ~65 min · 3 videos + 1 walkthrough · 10 MCQs + 3 scenarios · ≥80% to unlock M9</span></div>
+    </div>
+  </section>
+
+  <main class="container">
+
+    <h2 id="why">Why this matters</h2>
+    <p>
+      Before MCP, every agent framework invented its own tool format. Building a Slack integration meant separate code for Claude, GPT, Gemini, and every framework. <strong>MCP</strong> (introduced by Anthropic in late 2024, standardized through 2025-26) replaces that with one protocol. Write an MCP server once; every MCP-compatible agent can use it. As of 2026 it's the default interop layer for serious agentic systems.
+    </p>
+
+    <div class="objectives">
+      <h4>You'll be able to</h4>
+      <ul>
+        <li>Explain MCP architecture in 30 seconds (client, server, tools/resources/prompts)</li>
+        <li>Decide when to expose a capability via MCP vs. a direct tool integration</li>
+        <li>Spec a secure MCP server (read-only by default, allowlists, audit)</li>
+        <li>Recognize an MCP-shaped tool contract (name, description, schema)</li>
+        <li>Plan a path from "custom tools per framework" to "one MCP server, all agents"</li>
+      </ul>
+    </div>
+
+    <div class="toc">
+      <h4>Table of contents</h4>
+      <ol>
+        <li><a href="#arch">MCP architecture (clients, servers, capabilities)</a></li>
+        <li><a href="#contracts">Tool contracts in MCP</a></li>
+        <li><a href="#security">Secure tool access (read-only, allowlists)</a></li>
+        <li><a href="#audit">Auditable execution</a></li>
+        <li><a href="#ecosystem">Ecosystem &amp; migration path</a></li>
+        <li><a href="#books">Resources &amp; deeper reading</a></li>
+        <li><a href="#resume">Founder skills + resume panel</a></li>
+        <li><a href="#test">Module test</a></li>
+      </ol>
+    </div>
+
+    <h2 id="arch" class="section-anchor">1. MCP architecture</h2>
+    <p>Three roles:</p>
+    <ul>
+      <li><strong>Host.</strong> The AI application (Claude Desktop, Cursor, your own agent).</li>
+      <li><strong>Client.</strong> Inside the host — one client per connected MCP server.</li>
+      <li><strong>Server.</strong> Exposes <em>capabilities</em>: tools (functions), resources (read-only data), prompts (templates).</li>
+    </ul>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MCP architecture">
+        <defs><marker id="m8-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#3D5AFE"/></marker></defs>
+        <rect x="20" y="80" width="180" height="100" rx="8" fill="#EDF0FF" stroke="#3D5AFE" stroke-width="2"/>
+        <text x="110" y="105" text-anchor="middle" font-size="12" font-weight="700">HOST</text>
+        <text x="110" y="120" text-anchor="middle" font-size="10">(your agent / Claude / Cursor)</text>
+        <rect x="40" y="135" width="60" height="32" rx="4" fill="#FFFFFF" stroke="#3D5AFE"/><text x="70" y="155" text-anchor="middle" font-size="9">Client</text>
+        <rect x="110" y="135" width="60" height="32" rx="4" fill="#FFFFFF" stroke="#3D5AFE"/><text x="140" y="155" text-anchor="middle" font-size="9">Client</text>
+        <line x1="200" y1="120" x2="290" y2="60" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#m8-arr)"/>
+        <line x1="200" y1="140" x2="290" y2="140" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#m8-arr)"/>
+        <line x1="200" y1="160" x2="290" y2="220" stroke="#3D5AFE" stroke-width="1.5" marker-end="url(#m8-arr)"/>
+        <rect x="300" y="30" width="200" height="60" rx="8" fill="#FFFFFF" stroke="#1A1A1A"/>
+        <text x="400" y="50" text-anchor="middle" font-size="11" font-weight="700">MCP Server: Filesystem</text>
+        <text x="400" y="68" text-anchor="middle" font-size="9" fill="#7A7A7A">tools: read_file, list_dir</text>
+        <text x="400" y="82" text-anchor="middle" font-size="9" fill="#7A7A7A">(read-only)</text>
+        <rect x="300" y="110" width="200" height="60" rx="8" fill="#FFFFFF" stroke="#1A1A1A"/>
+        <text x="400" y="130" text-anchor="middle" font-size="11" font-weight="700">MCP Server: Slack</text>
+        <text x="400" y="148" text-anchor="middle" font-size="9" fill="#7A7A7A">tools: send_message, list_channels</text>
+        <text x="400" y="162" text-anchor="middle" font-size="9" fill="#7A7A7A">(allowlist: 3 channels)</text>
+        <rect x="300" y="190" width="200" height="60" rx="8" fill="#FFFFFF" stroke="#1A1A1A"/>
+        <text x="400" y="210" text-anchor="middle" font-size="11" font-weight="700">MCP Server: Postgres</text>
+        <text x="400" y="228" text-anchor="middle" font-size="9" fill="#7A7A7A">tools: query (SELECT only)</text>
+        <text x="400" y="242" text-anchor="middle" font-size="9" fill="#7A7A7A">resources: schema docs</text>
+        <text x="600" y="140" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#1A1A1A" font-style="italic">Each server is</text>
+        <text x="600" y="155" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#1A1A1A" font-style="italic">independent.</text>
+        <text x="600" y="170" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#1A1A1A" font-style="italic">Plug into any host.</text>
+      </svg>
+      <figcaption>MCP architecture. One protocol, many servers, many hosts — no per-framework integrations.</figcaption>
+    </figure>
+
+    <p>What an MCP server exposes:</p>
+    <ul>
+      <li><strong>Tools.</strong> Functions the agent can call. Tool contracts (name, description, input schema, output schema) follow Module 2's rules.</li>
+      <li><strong>Resources.</strong> Read-only data the agent can subscribe to or fetch (files, DB schemas, API docs).</li>
+      <li><strong>Prompts.</strong> Templated prompts the host can use (e.g., a "summarize document" prompt the server author wrote).</li>
+    </ul>
+
+    <figure class="video-embed">
+      <div class="video-embed__frame">
+        <iframe src="https://www.youtube.com/embed/kQmXtrmQ5Zg"
+                title="Building Agents with Model Context Protocol - Full Workshop with Mahesh Murag of Anthropic"
+                loading="lazy" allowfullscreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+      </div>
+      <figcaption>
+        <span class="video-embed__meta">Watch · Anthropic (MCP creator) · Workshop</span>
+        <strong>Building Agents with MCP — Full Workshop, Mahesh Murag (Anthropic)</strong>
+        First-party workshop from the team that created MCP. The canonical 90-minute deep dive. Worth watching in full if your team will be building MCP servers.
+        <br><a class="video-embed__yt-link" href="https://www.youtube.com/watch?v=kQmXtrmQ5Zg" target="_blank" rel="noopener">Open on YouTube ↗</a>
+      </figcaption>
+    </figure>
+
+    <h2 id="contracts" class="section-anchor">2. Tool contracts in MCP</h2>
+    <p>An MCP tool definition looks like (TypeScript SDK):</p>
+    <pre><code>server.tool({
+  name: "lookup_order",
+  description: "Fetch order details by order ID. Use before any refund decision.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      order_id: { type: "string", pattern: "^[0-9]+$" }
+    },
+    required: ["order_id"]
+  }
+}, async ({ order_id }) =&gt; {
+  // implementation — runs in your secure backend
+  return { date, amount, status };
+});</code></pre>
+    <p>
+      Notice: same five fields as Module 2's tool contracts. MCP didn't invent the contract — it standardized how clients <em>discover</em> contracts and call them. That's the breakthrough.
+    </p>
+
+    <h2 id="security" class="section-anchor">3. Secure tool access</h2>
+    <p>MCP servers are doors into your systems. Three rules:</p>
+    <ul>
+      <li><strong>Read-only by default.</strong> Every tool you ship starts as a read. Write tools are added explicitly, one by one, with explicit reason.</li>
+      <li><strong>Allowlist scope.</strong> The Slack server doesn't expose all 200 channels — only the 3 the agent legitimately needs. Pinecone search? Only the indexes for this product. Postgres? Only the views, never the base tables.</li>
+      <li><strong>Authentication per server.</strong> MCP supports OAuth, API keys, mTLS. Each server authenticates separately. Compromise one, the rest stay safe.</li>
+    </ul>
+
+    <figure class="video-embed">
+      <div class="video-embed__frame">
+        <iframe src="https://www.youtube.com/embed/T4-BdZQUCSE"
+                title="The Model Context Protocol: Connecting AI to Everything — Adam Jones, Anthropic"
+                loading="lazy" allowfullscreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+      </div>
+      <figcaption>
+        <span class="video-embed__meta">Watch · Anthropic</span>
+        <strong>Connecting AI to Everything — Adam Jones (Anthropic)</strong>
+        Anthropic's pitch for MCP's role in the ecosystem — including the security model and why "USB-C for AI" is the right analogy. Watch for the section on threat modeling.
+        <br><a class="video-embed__yt-link" href="https://www.youtube.com/watch?v=T4-BdZQUCSE" target="_blank" rel="noopener">Open on YouTube ↗</a>
+      </figcaption>
+    </figure>
+
+    <h2 id="audit" class="section-anchor">4. Auditable execution</h2>
+    <p>Every MCP server should log:</p>
+    <ul>
+      <li><strong>Which client called.</strong> Identity (which host / which agent / which user, if forwarded).</li>
+      <li><strong>Which tool, what input.</strong> Full input JSON.</li>
+      <li><strong>What output.</strong> Full response.</li>
+      <li><strong>When &amp; how long.</strong> Timestamp, latency.</li>
+      <li><strong>Whether HITL gated.</strong> Was a human approval involved? Who approved?</li>
+    </ul>
+    <p>Pair this with Module 10's Langfuse traces and you have the chain: agent decision → MCP call → side effect → audit. End-to-end reconstructable.</p>
+
+    <h2 id="ecosystem" class="section-anchor">5. Ecosystem &amp; migration path</h2>
+    <p>As of 2026:</p>
+    <ul>
+      <li><strong>Hosts that speak MCP:</strong> Claude (Anthropic), Cursor, Continue, Zed, Windsurf, plus most major agentic frameworks via plugins.</li>
+      <li><strong>Pre-built MCP servers:</strong> filesystem, Postgres, GitHub, Slack, Gmail, Google Drive, AWS, GCP, Notion, Linear, Stripe, Figma. The list grows monthly.</li>
+      <li><strong>SDKs:</strong> TypeScript, Python, Rust, Java, C#. Building a custom server is ~50 lines.</li>
+    </ul>
+    <p>Migration: for each internal capability your agents use today, ask "should this become an MCP server?" Usually yes, because (a) other agents/teams will reuse it, (b) it forces clean security boundaries, (c) it future-proofs against framework changes.</p>
+
+    <figure class="video-embed">
+      <div class="video-embed__frame">
+        <iframe src="https://www.youtube.com/embed/v3Fr2JR47KA"
+                title="The Future of MCP — David Soria Parra, Anthropic"
+                loading="lazy" allowfullscreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+      </div>
+      <figcaption>
+        <span class="video-embed__meta">Watch · Anthropic · 2026 outlook</span>
+        <strong>The Future of MCP — David Soria Parra (Anthropic)</strong>
+        Where MCP is going in 2026 — auth flows, remote servers, dynamic discovery. Important if you're betting infrastructure on it.
+        <br><a class="video-embed__yt-link" href="https://www.youtube.com/watch?v=v3Fr2JR47KA" target="_blank" rel="noopener">Open on YouTube ↗</a>
+      </figcaption>
+    </figure>
+
+    <div class="walkthrough" data-walkthrough-id="m8-mcp">
+      <div class="walkthrough__header"><h4 class="walkthrough__title">▷ Step through: an agent calls a tool via MCP</h4><span class="walkthrough__subtitle">6 steps · the full handshake</span></div>
+      <div class="walkthrough__viewport">
+        <svg viewBox="0 0 700 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MCP call walkthrough">
+          <g data-wf="1,2,3,4,5,6"><rect x="20" y="20" width="200" height="40" rx="6" fill="#EDF0FF" stroke="#3D5AFE" stroke-width="2"/><text x="120" y="44" text-anchor="middle" font-size="11" font-weight="700">HOST (Agent)</text></g>
+          <g data-wf="1,2,3,4,5,6"><rect x="480" y="20" width="200" height="40" rx="6" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2"/><text x="580" y="44" text-anchor="middle" font-size="11" font-weight="700">MCP SERVER (Postgres)</text></g>
+          <g data-wf="2,3,4,5,6"><line x1="220" y1="80" x2="475" y2="80" stroke="#3D5AFE" stroke-width="1.5"/><text x="350" y="73" text-anchor="middle" font-size="9" fill="#3D5AFE">1. initialize handshake</text><polygon points="475,80 465,75 465,85" fill="#3D5AFE"/></g>
+          <g data-wf="3,4,5,6"><line x1="475" y1="105" x2="220" y2="105" stroke="#2E7D32" stroke-width="1.5"/><text x="350" y="98" text-anchor="middle" font-size="9" fill="#2E7D32">2. capabilities: tools[query], resources[schema]</text><polygon points="220,105 230,100 230,110" fill="#2E7D32"/></g>
+          <g data-wf="4,5,6"><line x1="220" y1="135" x2="475" y2="135" stroke="#3D5AFE" stroke-width="1.5"/><text x="350" y="128" text-anchor="middle" font-size="9" fill="#3D5AFE">3. tool_call: query("SELECT * FROM orders_view WHERE id=4821")</text><polygon points="475,135 465,130 465,140" fill="#3D5AFE"/></g>
+          <g data-wf="5,6"><rect x="350" y="155" width="280" height="30" rx="4" fill="#FFF1E0" stroke="#B85C00"/><text x="490" y="174" text-anchor="middle" font-size="9" fill="#B85C00">4. server validates: SELECT only? allowlisted view? ✓</text></g>
+          <g data-wf="6"><line x1="475" y1="205" x2="220" y2="205" stroke="#2E7D32" stroke-width="1.5"/><text x="350" y="198" text-anchor="middle" font-size="9" fill="#2E7D32">5. tool_result: { date, amount, ... }</text><polygon points="220,205 230,200 230,210" fill="#2E7D32"/></g>
+          <g data-wf="6"><rect x="20" y="230" width="660" height="36" rx="6" fill="#F3F0E8" stroke="#7A7A7A"/><text x="350" y="254" text-anchor="middle" font-size="10" fill="#1A1A1A">6. Audit log: { caller, tool, input, output, ts, latency } — server-side AND host-side</text></g>
+        </svg>
+      </div>
+      <div class="walkthrough__caption"><h4 class="walkthrough__step-title"></h4><p class="walkthrough__step-body"></p></div>
+      <div class="walkthrough__controls"><button class="walkthrough__nav-btn" data-action="prev">←</button><span class="walkthrough__step-indicator"></span><button class="walkthrough__nav-btn" data-action="next">→</button><button class="walkthrough__play-btn" data-action="play">▶ Play</button></div>
+    </div>
+
+    <section class="books-section section-anchor" id="books">
+      <h2>📚 Resources &amp; Deeper Reading</h2>
+      <div class="books-grid">
+        <div class="book-card"><h4>MCP official spec &amp; docs</h4><div class="author">modelcontextprotocol.io</div><div class="why">The canonical reference. Start with "Introduction" → "Architecture" → "Server Concepts." ~1 hour.</div><div class="meta meta--free">Free · <a href="https://modelcontextprotocol.io/" target="_blank" rel="noopener">modelcontextprotocol.io ↗</a></div></div>
+        <div class="book-card"><h4>MCP server registry</h4><div class="author">Community</div><div class="why">Find pre-built servers for popular SaaS tools. Likely 5-10 of these slot directly into your stack.</div><div class="meta meta--free">Free · <a href="https://github.com/modelcontextprotocol/servers" target="_blank" rel="noopener">github.com/modelcontextprotocol/servers ↗</a></div></div>
+        <div class="book-card"><h4>Anthropic engineering blog — MCP posts</h4><div class="author">Anthropic</div><div class="why">Implementation guidance and security thinking, written by the team that designed the protocol.</div><div class="meta meta--free">Free · <a href="https://www.anthropic.com/news/model-context-protocol" target="_blank" rel="noopener">anthropic.com ↗</a></div></div>
+        <div class="book-card"><h4>MCP TypeScript / Python SDKs</h4><div class="author">Anthropic</div><div class="why">Hands-on. Building a starter server takes ~50 lines and 15 minutes. Have your team do this on Day 1.</div><div class="meta meta--free">Free · <a href="https://github.com/modelcontextprotocol" target="_blank" rel="noopener">github.com/modelcontextprotocol ↗</a></div></div>
+      </div>
+    </section>
+
+    <section id="resume" class="resume-panel section-anchor">
+      <h2>🚀 What You Can Now Build (and Claim)</h2>
+      <h3>What you can now design end-to-end</h3>
+      <ul style="margin: 0 0 1.25rem 0.4rem; padding-left: 1.1rem;">
+        <li>Spec an MCP server: capabilities (tools/resources/prompts), security stance (read-only default, allowlists), auth method, audit log fields.</li>
+        <li>Decide which internal capabilities deserve an MCP wrapper vs. staying internal.</li>
+        <li>Plan migration from "custom tools per framework" to "one MCP server, all agents."</li>
+        <li>Argue compellingly that MCP is "USB-C for AI" — and why that matters for vendor independence.</li>
+      </ul>
+      <h3>Resume bullets you can defend</h3>
+      <div class="resume-bullet" data-copy-text="Designed and deployed MCP servers exposing internal capabilities (read-only by default, allowlisted scope, OAuth-authenticated) to any MCP-compatible agent — eliminating per-framework tool integrations and standardizing audit logging.">Designed and deployed MCP servers exposing internal capabilities (read-only by default, allowlisted scope, OAuth-authenticated) to any MCP-compatible agent — eliminating per-framework tool integrations and standardizing audit logging.<button class="copy-btn">Copy</button></div>
+      <div class="resume-bullet" data-copy-text="Migrated agentic tool integrations to MCP — replacing 12 custom tool implementations across 3 frameworks with 4 reusable MCP servers, reducing maintenance burden and enabling rapid swap of agent frameworks without re-implementing integrations.">Migrated agentic tool integrations to MCP — replacing 12 custom tool implementations across 3 frameworks with 4 reusable MCP servers, reducing maintenance burden and enabling rapid swap of agent frameworks without re-implementing integrations.<button class="copy-btn">Copy</button></div>
+      <h3>Likely interview / investor / hiring questions</h3>
+      <div class="qa"><div class="q">Q: Why bet on MCP?</div><div class="a">A: Vendor independence and reuse. Before MCP, every framework had its own tool format — switching from LangChain to Microsoft Agent Framework meant re-implementing every integration. MCP standardizes the contract, so the same Postgres or Slack server works for any compliant agent. Anthropic championed it but it's open and adopted across the industry. It's the "USB-C for AI" — and on the same maturity curve.</div></div>
+      <div class="qa"><div class="q">Q: How do you keep an MCP server safe?</div><div class="a">A: Read-only by default — every tool ships as a read; writes added one at a time with explicit reason. Allowlist scope — Slack server exposes 3 channels not 200; Postgres server exposes views not base tables. Per-server auth (OAuth, mTLS, API key) so compromise of one server doesn\'t cascade. Full audit log on every call. Pair with HITL gates from Module 1 on irreversible actions.</div></div>
+    </section>
+
+    <section id="test" class="section-anchor"><div id="test-container"></div></section>
+    <nav class="module-nav" id="module-nav"></nav>
+  </main>
+
+  <footer class="site-footer"><div>Full Stack Agentic AI Engineering · Module 8 · <a href="../index.html">Course home</a></div></footer>
+
+  <script src="../assets/js/progress.js"></script>
+  <script src="../assets/js/test-engine.js"></script>
+  <script src="../assets/js/nav.js"></script>
+  <script src="../assets/js/ui.js"></script>
+  <script src="../assets/js/walkthroughs.js"></script>
+  <script src="../assets/data/syllabus.js"></script>
+  <script>
+    renderSiteHeader('#site-header', '../');
+
+    window.WALKTHROUGHS['m8-mcp'] = {
+      frames: [
+        { title: '1. Host and server come up', body: 'The agent (host) starts. An MCP client inside the host is configured to connect to the Postgres MCP server (which runs in your secure backend). Neither knows what the other can do yet.' },
+        { title: '2. Initialize handshake', body: 'Client sends initialize over the MCP transport (stdio for local, HTTP+SSE for remote). Server responds with its protocol version and supported capabilities.' },
+        { title: '3. Capability discovery', body: 'Server advertises: tools[query], resources[orders_schema, customers_schema], prompts[]. The agent now knows exactly what it can do — name, description, input schema, output schema for each tool.' },
+        { title: '4. Tool call', body: 'Agent decides to look up an order. It calls tools/call with name="query" and arguments={"sql": "SELECT * FROM orders_view WHERE id=4821"}. Note: orders_view, not orders — allowlisted views only.' },
+        { title: '5. Server validates and executes', body: 'Server checks: is the SQL SELECT-only? Is orders_view in the allowlist? Both yes. Runs the query against Postgres (with read-only credentials). Returns structured result.' },
+        { title: '6. Audit log written', body: 'Both host and server log the call: who called, which tool, full input, full output, timestamp, latency. End-to-end reconstructable. If anything goes wrong later, you have the trail.' }
+      ]
+    };
+
+    const TEST = {
+      moduleId: 'module-08',
+      mcqs: [
+        { q: 'What does MCP stand for and what problem does it solve?', options: ['Multi-Cloud Platform — unifies cloud APIs', 'Model Context Protocol — standardizes how AI agents discover and call tools across frameworks', 'Model Compute Pipeline — runs LLMs efficiently', 'Managed Caching Protocol'], correct: 1, explain: 'MCP = Model Context Protocol. Open standard for agent-to-tool communication. Write a server once; any compliant agent can use it.' },
+        { q: 'The three components of MCP are:', options: ['Frontend, backend, database', 'Host, client, server', 'Producer, broker, consumer', 'Loader, splitter, embedder'], correct: 1, explain: 'Host = the AI app (Claude Desktop, your agent). Client = inside the host, one per connected server. Server = exposes capabilities.' },
+        { q: 'What can an MCP server expose?', options: ['Only tools (functions)', 'Tools, resources (read-only data), and prompts (templates)', 'Only data', 'Only prompts'], correct: 1, explain: 'Three capability types: tools (callable functions), resources (subscribable data), prompts (templates the host can use).' },
+        { q: 'What\'s the recommended security default for MCP tools?', options: ['Open by default', 'Read-only by default; writes added explicitly one at a time', 'Admin-only', 'Disabled'], correct: 1, explain: 'Read-only default. Every write tool requires explicit reason. Allowlist what scope (channels, views, files) each tool can touch.' },
+        { q: 'An MCP server logs which of these per call?', options: ['Just timestamps', 'Caller, tool, input, output, timestamp, latency, HITL status', 'Just the output', 'Nothing — clients log instead'], correct: 1, explain: 'Full audit on every call. Server-side AND host-side. This is what makes downstream debugging and compliance feasible.' },
+        { q: 'MCP\'s analogy in consumer hardware is:', options: ['HDMI', 'USB-C ("one connector, many devices")', 'Bluetooth', 'Wi-Fi'], correct: 1, explain: 'USB-C is the right analogy: open standard, one shape, plug anything into anything. Common framing in 2026 talks.' },
+        { q: 'You have a Slack workspace with 200 channels. Your agent needs to post to 3. The MCP Slack server should:', options: ['Expose all 200 channels', 'Allowlist only the 3 relevant channels', 'Expose channels but ask for confirmation on each post', 'Use a different protocol'], correct: 1, explain: 'Allowlist scope: only the 3 channels the agent legitimately needs. Limits blast radius if the agent goes wrong.' },
+        { q: 'Migration from "custom tools per framework" to MCP yields what main benefit?', options: ['Faster execution', 'Reuse: write each integration once; use across any MCP-compliant agent / framework', 'Smaller model size', 'Free hosting'], correct: 1, explain: 'The killer benefit: write Postgres or Slack integration once as MCP; use across LangChain, Microsoft Agent Framework, Claude, Cursor, etc. No re-implementation.' },
+        { q: 'What\'s the rough size of a starter custom MCP server in TypeScript?', options: ['~50 lines and 15 minutes', '~5,000 lines and a week', '~50,000 lines and months', 'Not possible without specialized expertise'], correct: 0, explain: 'MCP SDKs (TS, Python, Rust) make starter servers trivial — ~50 lines for a working server with one tool. Production-hardening adds time; the protocol surface is small.' },
+        { q: 'Why is HITL still relevant when using MCP for tool calls?', options: ['HITL is replaced by MCP', 'MCP is just the transport — irreversible side effects still need human approval gates at the agent layer', 'MCP requires HITL on every call', 'MCP cannot work without HITL'], correct: 1, explain: 'MCP is plumbing. The HITL design (Module 1) operates at the agent layer — pause before calling a write tool, get approval, then dispatch the MCP tool call.' }
+      ],
+      scenarios: [
+        { q: 'Your team has 4 agents (Claude, GPT, Gemini-powered, internal). Each has its own custom integrations to Postgres, Slack, GitHub, Gmail — 16 implementations total. New integration takes 1 engineering week. Pitch the MCP migration.', modelAnswer: 'Current state: 16 integrations × 1 week = 16 weeks just to add a new tool to all 4 agents. Each integration is a fresh attack surface and a fresh maintenance burden. Bugs are duplicated 4 times.\n\nMCP migration:\n\n1. Replace 16 integrations with 4 MCP servers (Postgres, Slack, GitHub, Gmail). Each server is ~1-2 weeks to build well.\n\n2. Each of the 4 agents adds a generic MCP client (1 day per agent).\n\nNew state: a new integration is 1 MCP server build (~1-2 weeks) and zero per-agent work. All 4 agents pick it up automatically. 16-week cost becomes 1-2 weeks.\n\nSecurity wins:\n• Each MCP server applies the security stance (read-only default, allowlists, auth) in one place — not 4.\n• Audit logs become uniform; compliance becomes a single review, not 4.\n\nVendor wins:\n• When the team decides to swap one of the 4 agents to a new framework (this happens), the integrations are unaffected. Currently this swap means re-implementing all 4 integrations.\n\nCost of migration: 4 servers × 2 weeks = 8 engineering weeks one-time. Payback: next 2-3 integrations.\n\nDeprecation plan: build MCP servers in parallel with existing custom integrations. Cut over one agent at a time. Remove custom integrations after a stability period.\n\nRisk: MCP is young; we may need to track spec evolution. Manageable, especially since Anthropic, Microsoft, and the major framework vendors are all aligned on the standard.' },
+        { q: 'A security reviewer asks "if we adopt MCP, what new attack surfaces are we exposing?" 60-second answer.', modelAnswer: '"Three new surfaces, all manageable.\n\nOne: the MCP server itself. It\'s a service that the agent talks to over a transport (stdio for local, HTTP+SSE for remote). If the server has bugs (SQL injection in our query tool, path traversal in our filesystem tool), an agent that\'s been prompt-injected can exploit them. Mitigation: treat MCP servers as production services — pen-test them, run code review, use parameterized queries, sandbox file access.\n\nTwo: the auth boundary. Each MCP server authenticates separately. If we use shared secrets carelessly, compromise of one server\'s creds could leak. Mitigation: OAuth or mTLS per server, secret rotation, scoped tokens. Compromise of one server doesn\'t cascade.\n\nThree: prompt injection into tool descriptions. If the LLM reads a tool description from an MCP server and a malicious server crafted that description to manipulate the LLM, that\'s a new vector. Mitigation: only connect to MCP servers from trusted sources; review tool descriptions before deployment; for high-stakes tools, gate behind HITL so a human is always confirming the tool call regardless of how the LLM was convinced.\n\nNet: MCP doesn\'t add risks we don\'t already have. It moves them into one well-scoped place where we can review them once instead of N times for N custom integrations. That\'s a security win, not loss."' },
+        { q: 'A junior engineer asks "should we build all our internal capabilities as MCP servers?" When yes vs. when no?', modelAnswer: 'Yes when:\n\n• Other agents/teams will reuse this capability (e.g., "query customer DB" — every agent wants this).\n• The capability has well-defined security boundaries (read-only views, allowlisted endpoints).\n• You want vendor independence — building it as MCP means swapping the agent framework doesn\'t affect the integration.\n• The capability has reusable structure (CRUD on a resource, a search, a notify).\n\nNo when:\n\n• It\'s deeply specific to one agent\'s internal logic (e.g., "build this agent\'s next-step plan"). MCP servers are about external capabilities; internal cognition stays in the agent.\n• It\'s used in one place exactly and won\'t be reused. The MCP overhead isn\'t worth it; just call the function directly.\n• Security is hard to get right (e.g., "execute arbitrary code"). Some capabilities shouldn\'t exist as standardized servers because the blast radius is too dangerous.\n• You\'re in a prototype phase. Build the simplest thing first; convert to MCP when the design stabilizes.\n\nHeuristic: if you find yourself writing the same integration twice for two agents, that\'s the moment to convert it to an MCP server. If you might write it twice in the next quarter, do it now.\n\nNot a religion. MCP is a tool; use it where it pays back.' }
+      ]
+    };
+
+    renderTest(TEST, document.getElementById('test-container'));
+    renderModuleNav('module-08', '#module-nav');
+    initWalkthroughs();
+  </script>
+</body>
+</html>

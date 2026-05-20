@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resume Kit · Agentic AI Course</title>
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/module.css">
+  <link rel="stylesheet" href="../assets/css/print.css">
+  <style>
+    /* Resume-specific styles */
+    .skills-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+    .skill-cat {
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1rem 1.1rem;
+    }
+    .skill-cat h4 {
+      margin: 0 0 0.5rem;
+      font-family: var(--font-sans);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .skill-cat ul { margin: 0; padding-left: 1.1rem; font-size: 0.9rem; }
+    .skill-cat li { margin-bottom: 0.2rem; }
+
+    .star-card {
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+    .star-card h3 { margin-top: 0; font-family: var(--font-sans); font-size: 1.05rem; color: var(--accent); }
+    .star-card .star-row { margin-bottom: 0.65rem; font-size: 0.93rem; line-height: 1.55; }
+    .star-card .star-label {
+      display: inline-block;
+      width: 5.5rem;
+      font-weight: 700;
+      color: var(--ink);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      vertical-align: top;
+    }
+    .star-card .star-body { display: inline-block; width: calc(100% - 6rem); color: var(--ink-soft); }
+
+    .printable-resume {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 2.5rem 3rem;
+      margin: 2rem 0;
+      font-size: 0.9rem;
+      line-height: 1.55;
+      color: black;
+    }
+    .printable-resume h1 { font-size: 1.8rem; margin: 0 0 0.3rem; font-family: var(--font-serif); color: black; }
+    .printable-resume .resume-tagline { color: var(--ink-soft); margin-bottom: 0.5rem; font-style: italic; }
+    .printable-resume .resume-contact { color: var(--ink-soft); font-size: 0.85rem; margin-bottom: 1.25rem; }
+    .printable-resume h2 {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-family: var(--font-sans);
+      color: var(--accent);
+      margin: 1.5rem 0 0.5rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.2rem;
+    }
+    .printable-resume ul { padding-left: 1.1rem; margin: 0.4rem 0 0.75rem; }
+    .printable-resume li { margin-bottom: 0.3rem; font-size: 0.88rem; }
+    .printable-resume .role { font-weight: 700; margin-top: 0.75rem; }
+    .printable-resume .role-meta { color: var(--ink-muted); font-size: 0.82rem; margin-bottom: 0.4rem; }
+
+    @media print {
+      body * { visibility: hidden; }
+      .printable-resume, .printable-resume * { visibility: visible; }
+      .printable-resume {
+        position: absolute; left: 0; top: 0;
+        margin: 0; padding: 1.25in 1in;
+        width: 100%; border: none; box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site-header" id="site-header"></header>
+
+  <section class="module-hero">
+    <div class="module-hero__inner">
+      <div class="num">Resume Kit</div>
+      <h1>🚀 Resume &amp; Founder-Skills Kit</h1>
+      <p class="subtitle">Consolidated bullets, project descriptions in STAR format, a printable sample resume, and a cover letter template. Everything you need to talk about what you\'ve built.</p>
+      <div class="meta">
+        <span>Use after completing the modules and at least one portfolio project</span>
+      </div>
+    </div>
+  </section>
+
+  <main class="container">
+
+    <h2 id="how-to-use">How to use this</h2>
+    <p>This kit is built for two audiences at once:</p>
+    <ul>
+      <li><strong>Founders</strong> — use the skills inventory + project descriptions to brief investors, customers, and hires on what you can credibly defend. Don\'t claim what you haven\'t built; the projects ground every claim.</li>
+      <li><strong>Job seekers / consultants</strong> — copy resume bullets, adapt the STAR descriptions to fit your role, print the sample resume as a starting layout.</li>
+    </ul>
+    <p>The same principles apply to both: <strong>defend everything you claim, point to the artifact that proves it.</strong></p>
+
+    <h2 id="skills">Skills inventory</h2>
+    <p>What you can credibly claim after completing the course + at least one project. Organize on your resume by category.</p>
+
+    <div class="skills-grid">
+      <div class="skill-cat">
+        <h4>Frameworks &amp; Tools</h4>
+        <ul>
+          <li>LangChain (LCEL, structured outputs, retries, fallbacks)</li>
+          <li>LangGraph (state, reducers, checkpoints, HITL interrupts)</li>
+          <li>LlamaIndex (data/RAG layer)</li>
+          <li>MCP (Model Context Protocol — servers + clients)</li>
+          <li>Microsoft Agent Framework (alt orchestration)</li>
+          <li>n8n (no-code workflow automation)</li>
+        </ul>
+      </div>
+      <div class="skill-cat">
+        <h4>Patterns</h4>
+        <ul>
+          <li>Router · Planner-Executor · Supervisor-Worker</li>
+          <li>ReAct (Reason+Act) loops</li>
+          <li>Reflection / self-critique</li>
+          <li>Tool-use contracts (5-field spec)</li>
+          <li>Planning &amp; multi-step decomposition</li>
+          <li>Human-in-the-Loop (approve / edit / reject)</li>
+        </ul>
+      </div>
+      <div class="skill-cat">
+        <h4>Retrieval</h4>
+        <ul>
+          <li>Vector RAG (Pinecone, pgvector, Chroma)</li>
+          <li>Hybrid retrieval (vector + BM25)</li>
+          <li>Reranking (Cohere Rerank, Voyage)</li>
+          <li>Agentic RAG (rewrite, adaptive, groundedness)</li>
+          <li>GraphRAG (multi-hop, hybrid 3-lane)</li>
+        </ul>
+      </div>
+      <div class="skill-cat">
+        <h4>Knowledge Graphs</h4>
+        <ul>
+          <li>Neo4j entity-relation modeling</li>
+          <li>Ontology-driven design</li>
+          <li>Provenance &amp; audit trails</li>
+          <li>Cypher multi-hop queries</li>
+          <li>Schema constraints (uniqueness, existence, type)</li>
+        </ul>
+      </div>
+      <div class="skill-cat">
+        <h4>Safety &amp; Governance</h4>
+        <ul>
+          <li>Defense in depth (input/output validation, allowlists, HITL)</li>
+          <li>Prompt injection threat modeling (direct + indirect)</li>
+          <li>OWASP Top 10 for LLMs · NIST AI RMF · EU AI Act</li>
+          <li>PII detection &amp; redaction</li>
+          <li>Views-only data access patterns</li>
+          <li>Idempotency keys, allowlist scopes</li>
+        </ul>
+      </div>
+      <div class="skill-cat">
+        <h4>Evaluation &amp; Observability</h4>
+        <ul>
+          <li>Langfuse (traces, spans, scores, prompt registry)</li>
+          <li>LLM-as-judge (calibrated to humans)</li>
+          <li>Labeled eval datasets + regression gating</li>
+          <li>Shadow deploys + auto-rollback</li>
+          <li>Cost &amp; latency p50/p99 monitoring</li>
+          <li>RAGAS evaluation framework</li>
+        </ul>
+      </div>
+      <div class="skill-cat">
+        <h4>Enterprise Data</h4>
+        <ul>
+          <li>Databricks (Unity Catalog, SQL Serverless, Delta)</li>
+          <li>Governed Text-to-SQL (schema injection + validation)</li>
+          <li>Snowflake / BigQuery equivalents</li>
+          <li>Approval gates &amp; run registries</li>
+        </ul>
+      </div>
+      <div class="skill-cat">
+        <h4>Founder Skills</h4>
+        <ul>
+          <li>Architecture design judgment (chain vs graph, RAG vs GraphRAG)</li>
+          <li>Build vs. buy decisions (LangGraph vs n8n vs custom)</li>
+          <li>Pattern selection &amp; tradeoff analysis</li>
+          <li>Briefing technical teams in their vocabulary</li>
+          <li>Compliance &amp; investor narrative for AI systems</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2 id="projects-star">Project descriptions (STAR format)</h2>
+    <p>For each portfolio project, the STAR (Situation, Task, Action, Result) breakdown. Use these verbatim or adapt to your actual context.</p>
+
+    <div class="star-card">
+      <h3>Project 1 — Enterprise Knowledge Intelligence Agent (GraphRAG)</h3>
+      <div class="star-row"><span class="star-label">Situation</span><span class="star-body">B2B SaaS with 50,000+ documents across SharePoint, Confluence, Notion, and S3. Customer success, sales engineering, and compliance teams all needed cross-document answers; naive vector RAG could find similar text but couldn\'t connect entities or pass compliance review.</span></div>
+      <div class="star-row"><span class="star-label">Task</span><span class="star-body">Design and deliver a knowledge intelligence agent capable of multi-hop questions ("which customers are affected by clause X in template Y") with explainable, source-cited answers.</span></div>
+      <div class="star-row"><span class="star-label">Action</span><span class="star-body">Architected an ingestion pipeline that builds both a Neo4j knowledge graph (ontology-constrained, provenance on every fact) and a vector index. Implemented three-lane hybrid retrieval (vector + BM25 + graph traversal) with cross-encoder reranker. Enforced evidence-first answer schema; added LLM-as-judge groundedness checks; instrumented full traces via Langfuse.</span></div>
+      <div class="star-row"><span class="star-label">Result</span><span class="star-body">~70% hallucination reduction on labeled eval set. Customers receive answers with both citations and a graph traversal path, satisfying enterprise compliance reviews. Closed two enterprise deals that previously stalled on "show us how the AI explains itself."</span></div>
+    </div>
+
+    <div class="star-card">
+      <h3>Project 2 — Multi-Agent Operations Workflow (LangGraph)</h3>
+      <div class="star-row"><span class="star-label">Situation</span><span class="star-body">200 weekly customer escalations averaging 6 hours each. The customer success team\'s capacity grew linearly with revenue; the budget didn\'t.</span></div>
+      <div class="star-row"><span class="star-label">Task</span><span class="star-body">Build a multi-agent system that handles routine escalations end-to-end with human approval gates on irreversible actions, while preserving full audit for compliance.</span></div>
+      <div class="star-row"><span class="star-label">Action</span><span class="star-body">Designed a supervisor → worker LangGraph (research / planner / reviewer) with explicit termination logic and max-iteration budgets. Postgres-backed checkpointing supported multi-day HITL gaps. Every write tool routed through approve / edit / reject gates with idempotency keys. Daily eval against 100 historical cases.</span></div>
+      <div class="star-row"><span class="star-label">Result</span><span class="star-body">Mean time to resolution dropped from 6h to ~45m. 95% reviewer-approval rate on agent-proposed actions. Full audit trail of every node, tool call, and approval — passed two compliance reviews.</span></div>
+    </div>
+
+    <div class="star-card">
+      <h3>Project 3 — MCP Tool-Augmented Agent</h3>
+      <div class="star-row"><span class="star-label">Situation</span><span class="star-body">Four agents on four different frameworks (LangGraph, Microsoft Agent Framework, CrewAI, Claude Desktop) each maintained their own Postgres, Slack, GitHub, and Stripe integrations — 16 duplicated implementations.</span></div>
+      <div class="star-row"><span class="star-label">Task</span><span class="star-body">Eliminate duplicated integrations and unify security review without forcing all agents onto one framework.</span></div>
+      <div class="star-row"><span class="star-label">Action</span><span class="star-body">Built four MCP servers (postgres, slack, github, stripe) with scoped, read-only-default tools, per-server OAuth/mTLS auth, idempotency keys, and a unified audit log. Replaced 16 framework-specific integrations with 4 reusable MCP services.</span></div>
+      <div class="star-row"><span class="star-label">Result</span><span class="star-body">New integration cost dropped from 4-agents × 1-week to 1× 2-weeks. Security reviews consolidated from 4 to 1. Future framework migrations no longer touch integration code — estimated 6 engineering weeks saved per migration.</span></div>
+    </div>
+
+    <div class="star-card">
+      <h3>Project 4 — Databricks Ask-to-Query Agent</h3>
+      <div class="star-row"><span class="star-label">Situation</span><span class="star-body">Finance and operations teams had a 5-day backlog with the 2-person data team. CFO wanted business users to ask questions in English without sacrificing governance over a 10TB+ warehouse.</span></div>
+      <div class="star-row"><span class="star-label">Task</span><span class="star-body">Build a Text-to-SQL agent that\'s safe enough for production: no destructive SQL, no PII exfiltration, no runaway scans, full audit trail.</span></div>
+      <div class="star-row"><span class="star-label">Action</span><span class="star-body">Implemented schema-aware generation against Unity Catalog views (never base tables). Layered validation: SELECT-only parsing, allowlisted view references, LIMIT injection, dry-run cost estimation. Approval gate for queries above 1GB or novel patterns. Results landed in Delta with a complete run registry.</span></div>
+      <div class="star-row"><span class="star-label">Result</span><span class="star-body">Ad-hoc query turnaround from 5 days to ~60 seconds. Zero security incidents. Cost p99 held under budget through dry-run gating. Data team reallocated from triage to high-value pipeline work.</span></div>
+    </div>
+
+    <div class="star-card">
+      <h3>Project 5 — LLM Evaluation &amp; Observability (Langfuse)</h3>
+      <div class="star-row"><span class="star-label">Situation</span><span class="star-body">Three agents in production. Quality issues surfaced via customer complaints weeks after model or prompt changes. No systematic way to know if changes regressed.</span></div>
+      <div class="star-row"><span class="star-label">Task</span><span class="star-body">Establish observability + evaluation discipline that catches regressions before customers do.</span></div>
+      <div class="star-row"><span class="star-label">Action</span><span class="star-body">Auto-traced every agent with Langfuse. Curated 200-case labeled eval datasets per agent. LLM-as-judge evaluators calibrated against humans (&gt;85% agreement). Three-tier eval pipeline: CI smoke (2 min), nightly regression (15 min), shadow deploy (5% live traffic). Prompt registry for versioned config-deploy changes; auto-rollback on regression.</span></div>
+      <div class="star-row"><span class="star-label">Result</span><span class="star-body">Caught a model-provider update regression before 100% rollout — single incident prevented. Cost spike detected within 5 minutes via p99 alerts. Closed two enterprise deals where security review specifically required "show us how you monitor your AI."</span></div>
+    </div>
+
+    <h2 id="sample-resume">Printable sample resume</h2>
+    <p>Print-friendly layout (Cmd/Ctrl + P → "Save as PDF" produces a clean one-page resume). Replace placeholders with your specifics.</p>
+
+    <div class="printable-resume">
+      <h1>[Your Name]</h1>
+      <div class="resume-tagline">Founder &amp; Agentic AI Engineer · Building governed AI systems end-to-end</div>
+      <div class="resume-contact">[email] · [LinkedIn] · [GitHub or portfolio URL]</div>
+
+      <h2>Summary</h2>
+      <p style="margin: 0.25rem 0 0.5rem;">
+        Founder/engineer focused on production-grade agentic AI. Specialize in safe, evaluable, governed agent systems combining LangChain/LangGraph, Neo4j knowledge graphs, MCP-standardized tools, and Langfuse observability. Track record building systems that pass enterprise compliance reviews on the first try.
+      </p>
+
+      <h2>Selected Projects</h2>
+      <div class="role">Enterprise Knowledge Intelligence Agent (GraphRAG)</div>
+      <div class="role-meta">Neo4j · Pinecone · LangChain · Langfuse</div>
+      <ul>
+        <li>Designed three-lane hybrid retrieval (vector + BM25 + graph traversal) with cross-encoder reranking over 50k+ enterprise documents.</li>
+        <li>Reduced hallucination ~70% via evidence-first answer schema + post-generation groundedness LLM-as-judge.</li>
+        <li>Built compliance-ready explainability — every answer includes citations + graph traversal path.</li>
+      </ul>
+
+      <div class="role">Multi-Agent Customer Operations (LangGraph)</div>
+      <div class="role-meta">LangGraph · Postgres · HITL · Langfuse</div>
+      <ul>
+        <li>Built supervisor → worker (research / planner / reviewer) agent system with explicit termination + max-iteration budgets.</li>
+        <li>Reduced mean time-to-resolution on customer escalations from 6h → 45m.</li>
+        <li>Postgres-backed checkpoints supported multi-day HITL pauses; full audit of every node and approval.</li>
+      </ul>
+
+      <div class="role">MCP Tool-Augmented Agent Platform</div>
+      <div class="role-meta">MCP · Anthropic SDK · Multi-framework</div>
+      <ul>
+        <li>Replaced 16 framework-specific integrations with 4 reusable MCP servers (Postgres, Slack, GitHub, Stripe).</li>
+        <li>Per-server auth, scoped allowlists, idempotency keys, unified audit — bounded blast radius on any compromise.</li>
+        <li>Saved est. 6 engineering weeks per future framework migration.</li>
+      </ul>
+
+      <div class="role">Databricks Ask-to-Query Agent</div>
+      <div class="role-meta">Databricks · Unity Catalog · Delta · SQL Serverless</div>
+      <ul>
+        <li>Built governed Text-to-SQL with schema-aware generation, SELECT-only + cost-threshold validation, approval gates, Delta result storage, full run registry.</li>
+        <li>Reduced ad-hoc analytics turnaround from 5 days to ~60 seconds while preserving Unity Catalog governance.</li>
+      </ul>
+
+      <div class="role">LLM Eval &amp; Observability Platform</div>
+      <div class="role-meta">Langfuse · LLM-as-judge · CI/CD</div>
+      <ul>
+        <li>Three-tier eval pipeline (CI smoke, nightly regression, shadow deploy) gating every prompt/model change.</li>
+        <li>LLM-as-judge evaluators calibrated against humans at &gt;85% agreement; per-prompt-version cost &amp; latency tracking.</li>
+        <li>Caught a model-provider update regression before full rollout — single incident prevented saved multi-week churn cycle.</li>
+      </ul>
+
+      <h2>Skills</h2>
+      <p style="margin: 0.25rem 0;">
+        <strong>Frameworks:</strong> LangChain, LangGraph, LlamaIndex, MCP, Microsoft Agent Framework, n8n &nbsp;·&nbsp;
+        <strong>Patterns:</strong> ReAct, Reflection, Tool-use, Planner-Executor, Supervisor-Worker, HITL &nbsp;·&nbsp;
+        <strong>Retrieval:</strong> Hybrid RAG (vector + BM25 + graph), reranking, GraphRAG &nbsp;·&nbsp;
+        <strong>Data:</strong> Neo4j, Pinecone, pgvector, Databricks, Unity Catalog, Delta &nbsp;·&nbsp;
+        <strong>Safety:</strong> Defense in depth, prompt injection mitigation, OWASP LLM Top 10, EU AI Act / NIST RMF &nbsp;·&nbsp;
+        <strong>Observability:</strong> Langfuse, LLM-as-judge, regression eval, shadow deploys
+      </p>
+
+      <h2>Recognition / Certifications (optional)</h2>
+      <ul>
+        <li>Completed comprehensive "Full Stack Agentic AI Engineering" curriculum — 13 modules, 5 portfolio projects, including governance and compliance design.</li>
+        <li>[Add specific certifications: Neo4j Certified Professional, Databricks Certified, etc., if applicable]</li>
+      </ul>
+    </div>
+
+    <p style="text-align: center; margin: 1rem 0 2rem;">
+      <button class="btn" onclick="window.print()">🖨 Print / Save as PDF</button>
+    </p>
+
+    <h2 id="cover-letter">Cover letter template</h2>
+    <div class="printable-resume" style="font-size: 0.92rem;">
+      <p>[Hiring Manager Name]</p>
+      <p>[Company]</p>
+      <p>[Date]</p>
+
+      <p>Dear [Hiring Manager],</p>
+
+      <p>I\'m reaching out about [the specific role / area] at [Company]. I\'ve been building production-grade agentic AI systems — combining LangChain/LangGraph, Neo4j knowledge graphs, MCP-standardized tools, and Langfuse observability — and the work I\'ve seen [Company] doing on [a specific thing they care about] resonates with the systems I most want to build.</p>
+
+      <p>The single piece of my background most relevant to [the role]: [pick one project and one sentence — e.g., "I led the design of a GraphRAG system that reduced hallucination ~70% on a 50k-document corpus while passing enterprise compliance reviews on the first try, which is the same kind of problem your customers in [X industry] face."].</p>
+
+      <p>Two qualities I\'d bring beyond the technical stack: (1) bias toward eval-driven shipping — no prompt or model change leaves my desk without a regression check on a labeled dataset; (2) compliance-first design judgment — the question "could we defend this to a regulator?" is part of every architecture decision, which I\'ve found shortens enterprise sales cycles materially.</p>
+
+      <p>Happy to talk about specific problems you\'re working on or send portfolio detail on any of [Projects 1-5]. Thanks for considering.</p>
+
+      <p>Best,<br>[Your Name]</p>
+    </div>
+
+    <nav class="module-nav">
+      <a class="module-nav__btn" href="../index.html"><div class="dir">← Back</div><div class="title">Course home</div></a>
+      <a class="module-nav__btn module-nav__btn--next" href="interview-bank.html"><div class="dir">Next →</div><div class="title">Interview Bank</div></a>
+    </nav>
+  </main>
+
+  <footer class="site-footer"><div>Full Stack Agentic AI Engineering · Resume Kit · <a href="../index.html">Course home</a></div></footer>
+
+  <script src="../assets/js/progress.js"></script>
+  <script src="../assets/js/nav.js"></script>
+  <script src="../assets/js/ui.js"></script>
+  <script src="../assets/data/syllabus.js"></script>
+  <script>renderSiteHeader('#site-header', '../');</script>
+</body>
+</html>

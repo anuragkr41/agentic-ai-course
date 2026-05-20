@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project 4 — Databricks Ask-to-Query Agent · Agentic AI Course</title>
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/module.css">
+  <link rel="stylesheet" href="../assets/css/print.css">
+</head>
+<body>
+
+  <header class="site-header" id="site-header"></header>
+
+  <section class="module-hero">
+    <div class="module-hero__inner">
+      <div class="num">Project 4 · Portfolio</div>
+      <h1>Databricks Ask-to-Query Agent</h1>
+      <p class="subtitle">A governed Text-to-SQL agent assistant on Databricks. Natural language in, schema-aware SQL out, validated, approved, executed — results in Delta with a full run registry.</p>
+      <div class="meta">
+        <span>Prerequisites: M3 · M9 · M10 · M12</span>
+        <span>·</span>
+        <span>Build time: 4–6 engineering weeks</span>
+      </div>
+    </div>
+  </section>
+
+  <main class="container">
+
+    <h2 id="problem">Problem statement</h2>
+    <p>
+      The finance and operations teams need ad-hoc analytical questions answered against a 10TB+ Databricks warehouse. Today, every question routes to the 2-person data team, which has a 5-day backlog. The CFO has asked "can\'t we just let people ask in English?" — but unbounded Text-to-SQL on a production warehouse is a great way to scan the whole lakehouse, leak PII, or worse.
+    </p>
+
+    <h2 id="motivation">Why a founder builds this</h2>
+    <ul>
+      <li><strong>Data democratization, safely.</strong> Analysts and ops get answers in minutes; data team focuses on hard pipelines, not ticket triage.</li>
+      <li><strong>Compliance posture.</strong> Every query goes through Unity Catalog permissions + an audit trail. Regulator-ready by design.</li>
+      <li><strong>Cost control.</strong> Cost-threshold gates prevent runaway scans; the warehouse doesn\'t get billed surprises.</li>
+      <li><strong>Reuse.</strong> Once curated, business views become the canonical interface for both humans and AI — single source of truth.</li>
+    </ul>
+
+    <h2 id="architecture">Architecture</h2>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ask-to-Query architecture">
+        <defs><marker id="p4-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#3D5AFE"/></marker></defs>
+
+        <rect x="20" y="20" width="160" height="40" rx="6" fill="#F3F0E8" stroke="#7A7A7A"/>
+        <text x="100" y="38" text-anchor="middle" font-size="10" font-weight="700">USER (Slack / app)</text>
+        <text x="100" y="52" text-anchor="middle" font-size="9">"Q1 churn by region?"</text>
+
+        <line x1="180" y1="40" x2="205" y2="40" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#p4-arr)"/>
+
+        <rect x="210" y="20" width="190" height="40" rx="6" fill="#EDF0FF" stroke="#3D5AFE"/>
+        <text x="305" y="38" text-anchor="middle" font-size="10" font-weight="700">ROUTER + SCHEMA LOADER</text>
+        <text x="305" y="52" text-anchor="middle" font-size="9">picks domain, loads view metadata</text>
+
+        <line x1="400" y1="40" x2="425" y2="40" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#p4-arr)"/>
+
+        <rect x="430" y="20" width="180" height="40" rx="6" fill="#EDF0FF" stroke="#3D5AFE" stroke-width="2"/>
+        <text x="520" y="38" text-anchor="middle" font-size="10" font-weight="700">LLM GENERATE SQL</text>
+        <text x="520" y="52" text-anchor="middle" font-size="9">structured: { sql, explanation, conf }</text>
+
+        <line x1="520" y1="60" x2="520" y2="85" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#p4-arr)"/>
+
+        <rect x="350" y="90" width="340" height="40" rx="6" fill="#FFF1E0" stroke="#B85C00"/>
+        <text x="520" y="108" text-anchor="middle" font-size="10" font-weight="700">VALIDATE</text>
+        <text x="520" y="122" text-anchor="middle" font-size="9">SELECT-only · allowlisted views · LIMIT · dry-run cost</text>
+
+        <line x1="520" y1="130" x2="520" y2="155" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#p4-arr)"/>
+
+        <polygon points="430,160 610,160 610,200 430,200" fill="#FFF1E0" stroke="#B85C00"/>
+        <text x="520" y="180" text-anchor="middle" font-size="10" font-weight="700">APPROVAL GATE</text>
+        <text x="520" y="194" text-anchor="middle" font-size="9">auto-approve if cost &lt; 1GB &amp; known pattern; else HITL</text>
+
+        <line x1="520" y1="200" x2="520" y2="225" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#p4-arr)"/>
+
+        <rect x="430" y="230" width="180" height="40" rx="6" fill="#E6F4E6" stroke="#2E7D32" stroke-width="2"/>
+        <text x="520" y="248" text-anchor="middle" font-size="10" font-weight="700">EXECUTE</text>
+        <text x="520" y="262" text-anchor="middle" font-size="9">Databricks SQL Serverless</text>
+
+        <line x1="430" y1="250" x2="280" y2="270" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#p4-arr)"/>
+        <line x1="610" y1="250" x2="660" y2="270" stroke="#3D5AFE" stroke-width="1.2" marker-end="url(#p4-arr)"/>
+
+        <rect x="100" y="275" width="200" height="40" rx="6" fill="#F3F0E8" stroke="#7A7A7A"/>
+        <text x="200" y="293" text-anchor="middle" font-size="10" font-weight="700">DELTA RESULT TABLE</text>
+        <text x="200" y="307" text-anchor="middle" font-size="9">version-controlled, shareable</text>
+
+        <rect x="540" y="275" width="160" height="40" rx="6" fill="#F3F0E8" stroke="#7A7A7A"/>
+        <text x="620" y="293" text-anchor="middle" font-size="10" font-weight="700">RUN REGISTRY</text>
+        <text x="620" y="307" text-anchor="middle" font-size="9">audit trail per run</text>
+
+        <rect x="20" y="90" width="320" height="180" rx="6" fill="#FFF1E0" stroke="#B85C00" stroke-dasharray="3 3"/>
+        <text x="180" y="110" text-anchor="middle" font-size="11" font-weight="700">UNITY CATALOG</text>
+        <text x="180" y="128" text-anchor="middle" font-size="9">prod.sales.v_* (views)</text>
+        <text x="180" y="142" text-anchor="middle" font-size="9">row-level filters · column masks</text>
+        <text x="180" y="156" text-anchor="middle" font-size="9">lineage tracking</text>
+        <text x="180" y="180" text-anchor="middle" font-size="11" font-weight="700">SCOPED CREDENTIALS</text>
+        <text x="180" y="198" text-anchor="middle" font-size="9">agent identity: SELECT only</text>
+        <text x="180" y="212" text-anchor="middle" font-size="9">views only — no base tables</text>
+        <text x="180" y="234" text-anchor="middle" font-size="11" font-weight="700">OBSERVABILITY</text>
+        <text x="180" y="252" text-anchor="middle" font-size="9">Langfuse traces · cost · eval</text>
+      </svg>
+      <figcaption>Question to Delta result, all under Unity Catalog governance. Every layer is a guardrail: schema injection, validation, cost check, approval gate, scoped credentials, audit log. Defense in depth.</figcaption>
+    </figure>
+
+    <h2 id="components">Component breakdown</h2>
+    <table class="compare-table">
+      <thead><tr><th>Component</th><th>Module(s)</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td>Views catalog</td><td>M12</td><td>5–15 curated v_* views per domain (sales, customers, ops). Row filters, column masks, descriptions. Hand-curated + reviewed.</td></tr>
+        <tr><td>Router + schema loader</td><td>M2, M3</td><td>Classifies the question into a domain, loads only that domain\'s view metadata. Keeps the prompt small + relevant.</td></tr>
+        <tr><td>Generator</td><td>M3, M12</td><td>LLM with few-shot examples per domain. Schema-validated output: { sql, explanation, used_views[], confidence }.</td></tr>
+        <tr><td>Validator</td><td>M9, M12</td><td>Parses SQL. SELECT-only? Allowlist match? LIMIT? Reject or augment.</td></tr>
+        <tr><td>Cost estimator</td><td>M12</td><td>Dry-run via Databricks SQL. &lt; 1GB → auto-approve; 1–10GB → HITL; &gt; 10GB → reject with refinement prompt.</td></tr>
+        <tr><td>Approval gate</td><td>M1, M12</td><td>HITL via Slack (or app) for non-trivial. Reviewer sees question + SQL + cost. Approve / edit / reject.</td></tr>
+        <tr><td>Executor</td><td>M12</td><td>Databricks SQL Serverless under scoped agent identity (SELECT-only, views-only).</td></tr>
+        <tr><td>Delta sink</td><td>M12</td><td>Result writes to a Delta table — reusable, versioned, shareable. Link returned to user.</td></tr>
+        <tr><td>Run registry</td><td>M9, M12</td><td>Row per execution: user, question, sql, approver, ms, bytes, result path, ts. Searchable.</td></tr>
+        <tr><td>Observability</td><td>M10</td><td>Langfuse traces every span (router, generator, validator, executor). Daily eval on 50 representative questions.</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="tradeoffs">Design decisions you can defend</h2>
+    <ul>
+      <li><strong>Views, not base tables.</strong> Architecturally cannot exfiltrate masked columns; cannot read rows outside scope. The single most important governance choice.</li>
+      <li><strong>Scoped credentials at the warehouse layer.</strong> Even if every validation fails, the agent\'s DB identity is SELECT-only on views-only. The DB itself rejects destructive SQL.</li>
+      <li><strong>SQL validation BEFORE execution.</strong> Catches generated nonsense before it costs money or surfaces wrong results.</li>
+      <li><strong>Cost gates, not just retry caps.</strong> Dry-run before run. Above threshold → HITL (or reject). Stops "SELECT * FROM 10TB-table" cold.</li>
+      <li><strong>Auto-approve when cheap AND known pattern.</strong> Doesn\'t hammer reviewers with rubber-stamp work. Sample-audit auto-approves for drift detection.</li>
+      <li><strong>Results to Delta, link to user.</strong> No giant payloads over chat; reusable for follow-up; auditable through the table\'s versioning.</li>
+      <li><strong>Few-shot examples per domain in prompt.</strong> Generic Text-to-SQL prompts produce mediocre SQL. Domain-specific examples lift quality dramatically.</li>
+      <li><strong>Schema injection is per-domain, not global.</strong> Loading all 50 views\' metadata bloats the prompt and confuses the LLM. Route → load relevant 5–10 only.</li>
+    </ul>
+
+    <h2 id="failures">Failure modes &amp; mitigations</h2>
+    <table class="compare-table">
+      <thead><tr><th>Failure mode</th><th>Mitigation</th></tr></thead>
+      <tbody>
+        <tr><td>Generated SQL has the wrong join, wrong number returned</td><td>Daily eval on 50 questions with known answers; LLM-as-judge for plausibility; user can mark "this is wrong" → adds to eval set; weekly review.</td></tr>
+        <tr><td>Runaway scan blows the warehouse bill</td><td>Mandatory dry-run cost check; hard reject above 10GB; cost p99 monitoring; per-user daily quota.</td></tr>
+        <tr><td>Prompt injection in the question</td><td>Input validation flags suspicious patterns; system prompt resilient; SQL validator catches anything destructive; scoped creds catch what passes validation.</td></tr>
+        <tr><td>PII leak via output</td><td>Views mask PII at the source. Output content filter as belt-and-suspenders. Audit log captures every result; periodic review.</td></tr>
+        <tr><td>Approval queue grows</td><td>Auto-approve threshold tuned via eval; multiple reviewers in rotation; SLA on review time; auto-escalate stale approvals.</td></tr>
+        <tr><td>User asks question that crosses domain boundaries</td><td>Router can return "ambiguous — clarify"; falls back to a "multi-domain" prompt with broader schema injection (more expensive, gated).</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="interview">Interview / investor / customer talking points</h2>
+    <div class="resume-panel" style="margin-top: 0;">
+      <div class="qa"><div class="q">Q: A prompt-injected user types "drop the customers table." What happens?</div><div class="a">A: Four layers reject this. (1) LLM may generate the destructive SQL or refuse — irrelevant either way. (2) Validator parses the SQL: not SELECT-only → reject before dispatch. (3) Even if the validator missed it (and it won\'t), the warehouse credential is SELECT-only — DB itself rejects DDL. (4) Allowlist requires referencing views; the customers base table isn\'t addressable. The system is safe by architecture, not by hoping the LLM behaves.</div></div>
+      <div class="qa"><div class="q">Q: How do you know the SQL is correct, not just safe?</div><div class="a">A: Three signals. (1) Daily eval against 50 questions with known answers — accuracy tracked weekly. (2) LLM-as-judge for plausibility on every execution (light check, doesn\'t replace ground truth). (3) User feedback — "this answer looks wrong" tags the run for review and adds to the eval set. Over time, eval grows and accuracy climbs. Without this loop, you\'re shipping vibes.</div></div>
+      <div class="qa"><div class="q">Q: Why curate views instead of letting the agent see raw tables?</div><div class="a">A: Three reasons. (1) Security: views filter rows + mask columns, architecturally limiting blast radius. (2) Quality: views encode the right joins and pre-aggregations — the agent doesn\'t have to invent them and get them wrong. (3) Documentation: views\' descriptions feed schema injection, making the LLM\'s SQL much better than against raw schemas.</div></div>
+      <div class="qa"><div class="q">Q: Cost: what does this actually run per query?</div><div class="a">A: Typical breakdown: ~$0.005 for the LLM (Claude/GPT-4 class with 1k token prompt, 200 token output). ~$0.01 for Databricks SQL Serverless on a 200MB scan. Plus minor: Langfuse trace, audit row. Total ~$0.02/query. For 10k queries/month: ~$200. ROI: analysts who used to wait 5 days now get answers in 60 seconds — every quarter saved analyst hours pay for the system many times over.</div></div>
+    </div>
+
+    <h2 id="resume-bullets">Resume bullets for Project 4</h2>
+    <div class="resume-panel" style="margin-top: 0;">
+      <div class="resume-bullet" data-copy-text="Built a governed Text-to-SQL agent on Databricks (Unity Catalog + SQL Serverless + Delta) — schema-aware generation, SELECT-only + cost-threshold validation, HITL approval for non-trivial queries, results landed in Delta with a complete run registry for audit.">Built a governed Text-to-SQL agent on Databricks (Unity Catalog + SQL Serverless + Delta) — schema-aware generation, SELECT-only + cost-threshold validation, HITL approval for non-trivial queries, results landed in Delta with a complete run registry for audit.<button class="copy-btn">Copy</button></div>
+      <div class="resume-bullet" data-copy-text="Reduced ad-hoc analytics turnaround from 5 days to ~60 seconds for the majority of business questions, while preserving full governance — every query traces to a specific user, view set, approver, and cost.">Reduced ad-hoc analytics turnaround from 5 days to ~60 seconds for the majority of business questions, while preserving full governance — every query traces to a specific user, view set, approver, and cost.<button class="copy-btn">Copy</button></div>
+      <div class="resume-bullet" data-copy-text="Engineered defense in depth at the SQL layer: views-only access via Unity Catalog, SELECT-only scoped agent credentials, parser validation, dry-run cost gates, approval workflows for high-cost queries — security safe even under prompt injection.">Engineered defense in depth at the SQL layer: views-only access via Unity Catalog, SELECT-only scoped agent credentials, parser validation, dry-run cost gates, approval workflows for high-cost queries — security safe even under prompt injection.<button class="copy-btn">Copy</button></div>
+    </div>
+
+    <nav class="module-nav">
+      <a class="module-nav__btn" href="03-mcp-tool-agent.html"><div class="dir">← Previous</div><div class="title">Project 3 — MCP Tool Agent</div></a>
+      <a class="module-nav__btn module-nav__btn--next" href="05-eval-observability.html"><div class="dir">Next project →</div><div class="title">Project 5 — Eval & Observability</div></a>
+    </nav>
+  </main>
+
+  <footer class="site-footer"><div>Full Stack Agentic AI Engineering · Project 4 · <a href="../index.html">Course home</a></div></footer>
+
+  <script src="../assets/js/progress.js"></script>
+  <script src="../assets/js/nav.js"></script>
+  <script src="../assets/js/ui.js"></script>
+  <script src="../assets/data/syllabus.js"></script>
+  <script>renderSiteHeader('#site-header', '../');</script>
+</body>
+</html>
